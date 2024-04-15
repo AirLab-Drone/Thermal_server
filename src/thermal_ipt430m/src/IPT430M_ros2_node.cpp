@@ -43,6 +43,13 @@ extern "C"
 #include <std_msgs/msg/string.hpp>
 #include "cv_bridge/cv_bridge.h"
 #include <image_transport/image_transport.hpp>
+#include "std_srvs/srv/set_bool.hpp"
+
+#include "thermal_msgs/srv/auto_focus.hpp" 
+
+using SetBool = std_srvs::srv::SetBool;
+using std::placeholders::_1;
+using std::placeholders::_2;
 
 
 /* ---------------------------------- 函式宣告 ---------------------------------- */
@@ -116,6 +123,8 @@ public:
         image_pub_ = this->create_publisher<sensor_msgs::msg::Image>("thermal_image", 10);                   // thermal rgb img
         temperature_pub_ = this->create_publisher<std_msgs::msg::Float32>("hot_spot_temperature", 10);       // hot spot temperature
 
+        service_ = this->create_service<thermal_msgs::srv::AutoFocus>("auto_focus", std::bind(&ThermalCameraNode::AutoFocus, this, _1, _2));
+
         timer_ = this->create_wall_timer(std::chrono::milliseconds(1), std::bind(&ThermalCameraNode::publishThermalData, this));
 
     }
@@ -184,11 +193,28 @@ private:
         }
     }
 
+    void AutoFocus(
+        const std::shared_ptr<thermal_msgs::srv::AutoFocus::Request> request,
+        const std::shared_ptr<thermal_msgs::srv::AutoFocus::Response> response)
+    {
+        
+        std::cout << "Requested Data: " << request->auto_focus << std::endl;
+
+        // If request is start, send velocities to move the robot
+        if (request->auto_focus == "auto focus")
+        {
+            SGP_SetFocus(handle_, SGP_FOCUS_AUTO, 0);
+            response->is_focus = true;
+        }
+    }
+
     sensor_msgs::msg::Image::SharedPtr image_msg;
     rclcpp::Publisher<std_msgs::msg::Int32MultiArray>::SharedPtr pixel_pub_;
     rclcpp::Publisher<sensor_msgs::msg::Image>::SharedPtr image_pub_;
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr temperature_pub_;
     rclcpp::TimerBase::SharedPtr timer_;
+
+    rclcpp::Service<thermal_msgs::srv::AutoFocus>::SharedPtr service_;
 
     int IRModelHotSpot_x = 0;
     int IRModelHotSpot_y = 0;

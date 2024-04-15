@@ -16,7 +16,7 @@ class Window(QMainWindow):
         self.setWindowTitle("Image")
  
         # setting  the geometry of window
-        self.setGeometry(0, 0, 400, 300)
+        self.setGeometry(0, 0, 1080, 720)
  
         # creating label
         self.label = QLabel(self)

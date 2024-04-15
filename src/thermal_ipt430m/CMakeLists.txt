@@ -22,7 +22,8 @@ find_package(std_msgs REQUIRED)
 find_package(sensor_msgs REQUIRED)
 find_package(cv_bridge REQUIRED)
 find_package(image_transport REQUIRED)
-
+find_package(thermal_msgs REQUIRED)
+find_package(std_srvs REQUIRED)
 
 
 include_directories(include/thermal_ipt430m)
@@ -54,6 +55,8 @@ ament_target_dependencies(thermal_ipt430m_node
     cv_bridge 
     image_transport 
     OpenCV
+    thermal_msgs
+    std_srvs
 )
 
 install(TARGETS
