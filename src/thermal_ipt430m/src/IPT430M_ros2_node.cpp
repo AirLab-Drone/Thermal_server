@@ -123,7 +123,7 @@ public:
         image_pub_ = this->create_publisher<sensor_msgs::msg::Image>("thermal_image", 10);                   // thermal rgb img
         temperature_pub_ = this->create_publisher<std_msgs::msg::Float32>("hot_spot_temperature", 10);       // hot spot temperature
 
-        service_ = this->create_service<thermal_msgs::srv::AutoFocus>("auto_focus", std::bind(&ThermalCameraNode::AutoFocus, this, _1, _2));
+        auto_focus_srv_ = this->create_service<thermal_msgs::srv::AutoFocus>("auto_focus", std::bind(&ThermalCameraNode::AutoFocus, this, _1, _2));
 
         timer_ = this->create_wall_timer(std::chrono::milliseconds(1), std::bind(&ThermalCameraNode::publishThermalData, this));
 
@@ -203,6 +203,7 @@ private:
         // If request is start, send velocities to move the robot
         if (request->auto_focus == "auto focus")
         {
+            RCLCPP_INFO(this->get_logger(), "auto focus now");
             SGP_SetFocus(handle_, SGP_FOCUS_AUTO, 0);
             response->is_focus = true;
         }
@@ -214,7 +215,7 @@ private:
     rclcpp::Publisher<std_msgs::msg::Float32>::SharedPtr temperature_pub_;
     rclcpp::TimerBase::SharedPtr timer_;
 
-    rclcpp::Service<thermal_msgs::srv::AutoFocus>::SharedPtr service_;
+    rclcpp::Service<thermal_msgs::srv::AutoFocus>::SharedPtr auto_focus_srv_;
 
     int IRModelHotSpot_x = 0;
     int IRModelHotSpot_y = 0;

@@ -11,6 +11,7 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
+find_package(thermal_msgs REQUIRED)
 
 
 # # Include Cpp "include" directory
@@ -30,6 +31,7 @@ ament_python_install_package(${PROJECT_NAME})
 # Install Python executables
 install(PROGRAMS
   scripts/py_node.py
+  scripts/test_AutoFocusNode.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
