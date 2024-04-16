@@ -2,57 +2,95 @@
 
 
 import requests
+from requests.auth import HTTPBasicAuth
 import hashlib
-import random
-import string
 
-# Function to calculate MD5 hash
-def md5(text):
-    return hashlib.md5(text.encode()).hexdigest()
+import json
 
-# Function to generate a random string of specified length
-def generate_random_string(length):
-    letters = string.ascii_letters + string.digits
-    return ''.join(random.choice(letters) for i in range(length))
 
-# Function to perform HTTP request with digest authentication
-def perform_http_request_with_digest_auth(url, username, password, realm, nonce, opaque):
-    # Generate cnonce
-    cnonce = generate_random_string(16)
+# 定義首次登錄的RPC請求參數
+rpc_first_request = {
+    "method": "global.login",
+    "params": {
+        "userName": "admin",
+        "password": "",
+        "clientType": "Web3.0",
+        "loginType": "Direct",
+    },
+    "id": 1,
+}
+headers = {'user-agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/123.0.0.0 Safari/537.36'}
+
+
+
+# 發送首次RPC請求
+response_first = requests.post(
+    "http://192.168.1.108/RPC2_Login", json=rpc_first_request, headers=headers
+)
+
+# 檢查第一次請求的響應
+if response_first.status_code == 200:
+
+    # 獲取第一次請求的響應內容
+    response_first_data = response_first.json()
+    response_first_data_print = json.dumps(response_first_data, indent=4)
+    print("第一次請求響應")
+    print(response_first_data_print)
+    print()
+
+    # 獲取 realm 和 random 的值
+    realm = response_first_data["params"]["realm"]
+    random = response_first_data["params"]["random"]
+    print("realm:", realm)
+    print("random:", random)
     
-    # Construct HA1
-    HA1 = md5(f"{username}:{realm}:{password}")
-    
-    # Construct HA2
-    uri = url.split("://")[1].split("/", 1)[1]  # Extract URI from URL
-    HA2 = md5(f"GET:{uri}")
-    
-    # Construct response
-    nc = "00000002"
-    qop = "auth"
-    response = md5(f"{HA1}:{nonce}:{nc}:{cnonce}:{qop}:{HA2}")
-    
-    # Construct Authorization header
-    auth_response = (
-        f'Digest username="{username}", realm="{realm}", nonce="{nonce}", uri="{uri}", '
-        f'qop={qop}, nc={nc}, cnonce="{cnonce}", response="{response}", opaque="{opaque}"'
+    # 計算第二次請求所需的密碼
+    username = 'admin'
+    password = 'admin'  # 實際使用時，可能需要從安全的地方獲取密碼
+
+    # MD5(username:random:MD5(username:realm:password))。
+    hashed_password = md5value(username + ':' + random + ':' + md5value(username + ':' + realm + ':' + password))
+
+    # 定義第二次登錄的RPC請求參數
+    rpc_second_request = {
+        "method": "global.login",
+        "params": {
+            "userName": "admin",
+            "password": hashed_password,
+            "clientType": "Web3.0",
+            "loginType": "Direct",
+            "authorityType": "Default",
+        },
+        "id": 2,
+        "session": response_first_data["session"],
+    }
+
+    # 發送第二次RPC請求
+    response_second = requests.post(
+        "http://192.168.1.108/RPC2_Login", json=rpc_second_request, headers=headers
     )
-    
-    # Perform HTTP GET request with Authorization header
-    headers = {"Authorization": auth_response}
-    response = requests.get(url, headers=headers)
-    
-    return response
 
-# Example usage
-url = "http://192.168.1.108/cgi-bin/configManager.cgi?action=getConfig&name=VideoWidget"
-username = "admin"
-password = "admin"
-realm = "Login to GD0310PAZ00022"
-nonce = "220711551"
-opaque = "ecd96bfa32ed521cda6e9a8ed1701e6b3ef687d0"
+    # 檢查第二次請求的響應
+    if response_second.status_code == 200:
+        response_second_data = response_second.json()
+        response_second_data_print = json.dumps(response_second_data, indent=4)
+        print("第二次請求響應")
+        print(response_second_data_print)
+        print()
 
-response = perform_http_request_with_digest_auth(url, username, password, realm, nonce, opaque)
+        url = 'http://192.168.1.108/cgi-bin/RPC_Loadfile/RadiometryHeatMap.jpg&channel=2'
+        # # url1 = 'http://admin:admin@192.168.1.108/cgi-bin/RPC_Loadfile/RadiometryHeatMap.jpg&channel=2'
 
-print("HTTP Status Code:", response.status_code)
-print("Response Body:", response.text)
+        user = 'admin'
+        password = 'admin'
+        img = requests.get(url=url, auth=(user, password))
+        # img = requests.get(url=url)
+
+        print(img.status_code)
+        
+
+
+    else:
+        print("登錄失敗")
+else:
+    print("第一次請求失敗")
