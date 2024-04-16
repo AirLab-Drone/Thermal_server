@@ -78,6 +78,7 @@ if response_first.status_code == 200:
         print(response_second_data_print)
         print()
 
+        # TODO:獲取溫度、圖片
         url = 'http://192.168.1.108/cgi-bin/RPC_Loadfile/RadiometryHeatMap.jpg&channel=2'
         # # url1 = 'http://admin:admin@192.168.1.108/cgi-bin/RPC_Loadfile/RadiometryHeatMap.jpg&channel=2'
 
