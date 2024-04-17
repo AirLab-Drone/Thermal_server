@@ -18,7 +18,7 @@ def md5value(key):
     input_name.update(key.encode("utf-8"))
     return input_name.hexdigest().upper()
 
-
+# TODO:重新寫登入函數
 def login() -> str | None:
     # 定義首次登錄的RPC請求參數
     rpc_first_request = {
@@ -99,7 +99,6 @@ def login() -> str | None:
 
 
 def get_imgae():
-    # TODO:獲取溫度、圖片
     url = "http://192.168.1.108/cgi-bin/snapshot.cgi?channel=1"
     img = requests.get(url=url)
     print(img.status_code)
@@ -138,9 +137,16 @@ def thermal_stream():
         except:
             pass
 
+
+
+
 if __name__ == "__main__":
-    sesssion = login()
-    if sesssion:
-        live(session=sesssion)
+    # sesssion = login()
+    # if sesssion:
+    #     live(session=sesssion)
+
+
+    # motor = requests.get('http://admin:admin@192.168.1.108/cgi-bin/ptz.cgi?action=getStatus')
+    # print(motor)
     # get_imgae()
     thermal_stream()
