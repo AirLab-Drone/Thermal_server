@@ -97,12 +97,6 @@ def login() -> str | None:
         print("第一次請求失敗")
     return None
 
-
-def get_imgae():
-    url = "http://192.168.1.108/cgi-bin/snapshot.cgi?channel=1"
-    img = requests.get(url=url)
-    print(img.status_code)
-
 def live(session: str):
     url = "http://192.168.1.108/RPC2"
     body = {
@@ -115,9 +109,12 @@ def live(session: str):
         url=url, json=body, headers=headers
     )
     print(response.json())
+
 def thermal_stream():
     vcap  = cv2.VideoCapture('rtsp://admin:admin@192.168.1.108/cam/realmonitor?channel=2&subtype=0')
     vcap1 = cv2.VideoCapture('rtsp://admin:admin@192.168.1.108/cam/realmonitor?channel=1&subtype=0')
+    if vcap:
+        print('open camera success')
     while 1:
         try:
             ret, frame = vcap.read()

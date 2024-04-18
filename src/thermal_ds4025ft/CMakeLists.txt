@@ -33,6 +33,8 @@ ament_python_install_package(${PROJECT_NAME})
 
 install(PROGRAMS
   scripts/test_thermal_ds4025ft.py
+  scripts/DS4025FT_ros2_node.py
+  scripts/test_code.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
