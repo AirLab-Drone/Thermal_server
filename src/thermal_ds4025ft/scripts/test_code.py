@@ -4,6 +4,7 @@ import requests
 import json
 import hashlib
 import re
+import time
 
 
 URL_GetPTZStatus = "http://192.168.1.100:8080/api/v1/thermal"
@@ -15,7 +16,7 @@ def md5value(key) -> str:
     return input_name.hexdigest().lower()
 
 
-def IsLogin(*, url: str, account: str, password: str) -> bool:
+def CallAPI(*, url: str, account: str, password: str) -> bool:
 
     login_response = requests.get(url)
 
@@ -42,21 +43,29 @@ def IsLogin(*, url: str, account: str, password: str) -> bool:
         )
         authResponse = f'Digest username="{account}", realm="{realm}", nonce="{nonce}", uri="{url}", qop={qop}, nc={nc}, cnonce="{nonce}", response="{response}", opaque="{opaque}"'
 
-
         headers = {"Authorization": authResponse}
         response = requests.get(url, headers=headers)
         print(f"response: {response.text}")
 
+        return True
 
+    else:
         return False
 
 
 def main():
-    url = "http://192.168.1.108/cgi-bin/ptz.cgi?action=start&channel=1&code=Up&arg1=0&arg2=1&arg3=0"
+    url_up = "http://192.168.1.108/cgi-bin/ptz.cgi?action=start&channel=1&code=Up&arg1=0&arg2=8&arg3=0"
+    url_down = "http://192.168.1.108/cgi-bin/ptz.cgi?action=start&channel=1&code=Down&arg1=0&arg2=8&arg3=0"
+    sleep_time = 0.5
     account = "admin"
     password = "admin"
 
-    IsLogin(url=url, account=account, password=password)
+    while True:
+
+        CallAPI(url=url_up, account=account, password=password)
+        time.sleep(sleep_time)
+        CallAPI(url=url_down, account=account, password=password)
+        time.sleep(sleep_time)
 
     # if login(url=url):
     #     print("登入成功")
