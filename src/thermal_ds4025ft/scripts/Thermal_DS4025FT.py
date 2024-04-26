@@ -114,8 +114,9 @@ class Thermal_DS4025FT():
         self.IRData = struct.unpack('h' * matrix_size, self.heat_map.read(2 * matrix_size))
         # 把IRData轉成np.array
         self.IRData = np.array(self.IRData).reshape(self.__IRHeight, self.__IRWidth)
-        self.IRData = self.IRData / 10.0
-        print(self.IRData)
+        max_temp = np.max(self.IRData)
+        max_temp_position = np.unravel_index(np.argmax(self.IRData), self.IRData.shape)
+        print(f'max_temp: {max_temp}, max_temp_position: {max_temp_position}')
     
 
 
@@ -162,21 +163,21 @@ def main():
 
     vcap = thermalCamera.getThermalStream()
 
-    # try:
-    #     while True:
+    try:
+        while True:
 
-    #         thermalCamera.getHeatMap()
-    #         thermalCamera.getTemperatureMartix()
+            thermalCamera.getHeatMap()
+            thermalCamera.getTemperatureMartix()
             
-    #         # ret, frame = vcap.read()    
-    #         # if ret:
-    #         #     cv2.imshow('VIDEO', frame)
+            # ret, frame = vcap.read()    
+            # if ret:
+            #     cv2.imshow('VIDEO', frame)
 
-    #         # key = cv2.waitKey(1)
-    #         # if key == 27:
-    #         #     break
-    # finally:
-    #     pass
+            # key = cv2.waitKey(1)
+            # if key == 27:
+            #     break
+    finally:
+        pass
         # vcap.release()
         # cv2.destroyAllWindows()
 
