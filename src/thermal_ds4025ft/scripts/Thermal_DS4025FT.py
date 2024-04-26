@@ -129,6 +129,7 @@ class Thermal_DS4025FT():
 
                 # 獲取拍攝距離
                 picture_frame.Distance = struct.unpack("f", self.heat_map.read(4))[0]
+                
 
                 # 獲取環境溫度
                 picture_frame.AmbientTemperature = struct.unpack("f", self.heat_map.read(4))[0]
@@ -153,7 +154,17 @@ class Thermal_DS4025FT():
                 picture_frame.IRData = np.array(picture_frame.IRData).reshape(picture_frame.Height, picture_frame.Width)
                 picture_frame.IRData = picture_frame.IRData / 10.0
                 
-                print(f'max:temperature: {np.max(picture_frame.IRData)}')
+                print(f'picture_frame.OptiTrans: {picture_frame.OptiTrans}')
+                print(f'picture_frame.Emiss: {picture_frame.Emiss}')
+                print(f'picture_frame.Distance: {picture_frame.Distance}')
+                print(f'picture_frame.AmbientTemperature: {picture_frame.AmbientTemperature}')
+                print(f'picture_frame.RelativeHumidity: {picture_frame.RelativeHumidity}')
+                print(f'picture_frame.Height: {picture_frame.Height}')
+                print(f'picture_frame.Width: {picture_frame.Width}')
+                print(f'picture_frame.Precision: {picture_frame.Precision}')
+                print(f'picture_frame.IRData: {picture_frame.IRData}')
+
+
                 return picture_frame.IRData
             finally:
 
@@ -200,19 +211,20 @@ def main():
 
     try:
         while True:
-            # thermalCamera.getHeatMap()
-            # thermalCamera.getTemperatureMartix()
+            thermalCamera.getHeatMap()
+            thermalCamera.getTemperatureMartix()
             
-            ret, frame = vcap.read()    
-            if ret:
-                cv2.imshow('VIDEO', frame)
+            # ret, frame = vcap.read()    
+            # if ret:
+            #     cv2.imshow('VIDEO', frame)
 
-            key = cv2.waitKey(1)
-            if key == 27:
-                break
+            # key = cv2.waitKey(1)
+            # if key == 27:
+            #     break
     finally:
-        vcap.release()
-        cv2.destroyAllWindows()
+        pass
+        # vcap.release()
+        # cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":
