@@ -10,26 +10,16 @@ import numpy as np
 import struct
 import io
 
-class FirFrame:
-    def __init__(self):
-        self.FileFlag = bytes([0] * 4)
-        self.OptiTrans = 0.0
-        self.Emiss = 0.0
-        self.Distance = 0.0
-        self.AmbientTemperature = 0.0
-        self.RelativeHumidity = 0.0
-        self.Width = 0
-        self.Height = 0
-        self.Precision = bytes([0])
-        self.IRData = None
-
 class Thermal_DS4025FT():
     def __init__(self, ip_address: str, account: str, password: str) -> None:
+        self.__IRWidth = 384
+        self.__IRHeight = 288
+
         self.ip_address = ip_address
         self.account = account
         self.password = password
         self.heat_map = None
-        self.picture_frame = FirFrame()
+        self.IRData = None
 
         
     def md5value(self, key) -> str:
@@ -38,7 +28,7 @@ class Thermal_DS4025FT():
         return input_name.hexdigest().lower()
 
 
-    def login_thermal_camera(self, url: str) -> dict|bool:
+    def login_thermal_camera(self, url: str) -> dict:
 
         login_response = requests.get(url)
 
@@ -69,19 +59,18 @@ class Thermal_DS4025FT():
 
             return headers
         else:
-            return False
+            raise ValueError("Failed to login.")
         
 
-    def getPointTemperature(self, x:int, y:int) -> float|bool:
+    def getPointTemperature(self, x:int, y:int) -> float:
         # x is [0-8191], y is [0-8191]
         if x < 0 or x > 8191 or y < 0 or y > 8191:
-            return False
+            raise ValueError("x or y out of range.")
         url = f'http://{self.ip_address}/cgi-bin/RadiometryManager.cgi?action=getRandomPointTemper&channel=2&coordinate[0]={x}&coordinate[1]={y}'
         header = self.login_thermal_camera(url=url)
         if header:
             response = requests.get(url, headers=header)
             if response.status_code == 200:
-                
                 return response.text
 
 
@@ -107,34 +96,29 @@ class Thermal_DS4025FT():
         url = f'http://{self.ip_address}/cgi-bin/RPC_Loadfile/RadiometryHeatMap.jpg&channel=2'
         header = self.login_thermal_camera(url=url)
         if header:
-            response = requests.get(url, headers=header, stream=True).raw
-            # TODO: response有時不會有？
+            response = requests.get(url, headers=header, stream=True)
             if response.status_code == 200:
-                self.heat_map = io.BytesIO(response.read())
-            
-                
+                self.heat_map = io.BytesIO(response.raw.read())
+            else:
+                raise ValueError("Failed to get heat map.")
             
 
-    def getTemperatureMartix(self) -> np.array:
-            
-            
-            try:
-            
-                # 移動文件指針到 IRData 的開始位置
-                self.heat_map.seek(64)
+    def getTemperatureMartix(self) -> None:
+        
+        
+        # 移動文件指針到 IRData 的開始位置
+        self.heat_map.seek(64)
 
-                # 讀取溫度矩陣
-                matrix_size = self.picture_frame.Width * self.picture_frame.Height
-                self.picture_frame.IRData = struct.unpack('h' * matrix_size, self.heat_map.read(2 * matrix_size))
-                # 把IRData轉成np.array
-                self.picture_frame.IRData = np.array(self.picture_frame.IRData).reshape(self.picture_frame.Height, self.picture_frame.Width)
-                self.picture_frame.IRData = self.picture_frame.IRData / 10.0
-                print(self.picture_frame.IRData)
-            
-                return self.picture_frame.IRData
-            finally:
-                
-                self.heat_map.seek(0)
+        # 讀取溫度矩陣
+        matrix_size = self.__IRWidth * self.__IRHeight
+        self.IRData = struct.unpack('h' * matrix_size, self.heat_map.read(2 * matrix_size))
+        # 把IRData轉成np.array
+        self.IRData = np.array(self.IRData).reshape(self.__IRHeight, self.__IRWidth)
+        self.IRData = self.IRData / 10.0
+        print(self.IRData)
+    
+
+
                 
             
         
@@ -172,24 +156,27 @@ def main():
     ip_address = "192.168.1.108"
     thermalCamera = Thermal_DS4025FT(ip_address=ip_address, account=account, password=password)
     # thermalCamera.setHeatMapFormat(format="IR-SGCC-FIR64")
-    # thermalCamera.getHeatMap()
+    thermalCamera.getHeatMap()
+
+
 
     vcap = thermalCamera.getThermalStream()
 
-    try:
-        while True:
-            thermalCamera.getHeatMap()
-            thermalCamera.getTemperatureMartix()
-            
-            # ret, frame = vcap.read()    
-            # if ret:
-            #     cv2.imshow('VIDEO', frame)
+    # try:
+    #     while True:
 
-            # key = cv2.waitKey(1)
-            # if key == 27:
-            #     break
-    finally:
-        pass
+    #         thermalCamera.getHeatMap()
+    #         thermalCamera.getTemperatureMartix()
+            
+    #         # ret, frame = vcap.read()    
+    #         # if ret:
+    #         #     cv2.imshow('VIDEO', frame)
+
+    #         # key = cv2.waitKey(1)
+    #         # if key == 27:
+    #         #     break
+    # finally:
+    #     pass
         # vcap.release()
         # cv2.destroyAllWindows()
 
