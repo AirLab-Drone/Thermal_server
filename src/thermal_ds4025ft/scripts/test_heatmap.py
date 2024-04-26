@@ -55,15 +55,15 @@ def getTemperatureMartix(self) -> np.array:
             picture_frame.IRData = np.array(picture_frame.IRData).reshape(picture_frame.Height, picture_frame.Width)
             picture_frame.IRData = picture_frame.IRData / 10.0
             
-            print(f'picture_frame.OptiTrans: {picture_frame.OptiTrans}')
-            print(f'picture_frame.Emiss: {picture_frame.Emiss}')
-            print(f'picture_frame.Distance: {picture_frame.Distance}')
-            print(f'picture_frame.AmbientTemperature: {picture_frame.AmbientTemperature}')
-            print(f'picture_frame.RelativeHumidity: {picture_frame.RelativeHumidity}')
-            print(f'picture_frame.Height: {picture_frame.Height}')
-            print(f'picture_frame.Width: {picture_frame.Width}')
-            print(f'picture_frame.Precision: {picture_frame.Precision}')
-            print(f'picture_frame.IRData: {picture_frame.IRData}')
+            # print(f'picture_frame.OptiTrans: {picture_frame.OptiTrans}')
+            # print(f'picture_frame.Emiss: {picture_frame.Emiss}')
+            # print(f'picture_frame.Distance: {picture_frame.Distance}')
+            # print(f'picture_frame.AmbientTemperature: {picture_frame.AmbientTemperature}')
+            # print(f'picture_frame.RelativeHumidity: {picture_frame.RelativeHumidity}')
+            # print(f'picture_frame.Height: {picture_frame.Height}')
+            # print(f'picture_frame.Width: {picture_frame.Width}')
+            # print(f'picture_frame.Precision: {picture_frame.Precision}')
+            # print(f'picture_frame.IRData: {picture_frame.IRData}')
 
 
             return picture_frame.IRData

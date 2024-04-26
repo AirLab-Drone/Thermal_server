@@ -29,6 +29,7 @@ class Thermal_DS4025FT():
         self.account = account
         self.password = password
         self.heat_map = None
+        self.picture_frame = FirFrame()
 
         
     def md5value(self, key) -> str:
@@ -101,74 +102,40 @@ class Thermal_DS4025FT():
         else:
             raise ValueError("Heat map format not supported.")
             
-
+    
     def getHeatMap(self) -> None:
         url = f'http://{self.ip_address}/cgi-bin/RPC_Loadfile/RadiometryHeatMap.jpg&channel=2'
         header = self.login_thermal_camera(url=url)
         if header:
-            
             response = requests.get(url, headers=header, stream=True).raw
-
-            self.heat_map = io.BytesIO(response.read())  # 如果沒有創建，則創建一個新的對象
-            self.heat_map.seek(0)
+            # TODO: response有時不會有？
+            if response.status_code == 200:
+                self.heat_map = io.BytesIO(response.read())
+            
                 
             
 
     def getTemperatureMartix(self) -> np.array:
             
-            picture_frame = FirFrame()
+            
             try:
-                # 解析文件標記
-                picture_frame.FileFlag = self.heat_map.read(4)
-
-                # 獲取光學透過率
-                picture_frame.OptiTrans = struct.unpack("f", self.heat_map.read(4))[0]
-
-                # 獲取辐射率
-                picture_frame.Emiss = struct.unpack("f", self.heat_map.read(4))[0]
-
-                # 獲取拍攝距離
-                picture_frame.Distance = struct.unpack("f", self.heat_map.read(4))[0]
-                
-
-                # 獲取環境溫度
-                picture_frame.AmbientTemperature = struct.unpack("f", self.heat_map.read(4))[0]
-
-                # 獲取相對濕度
-                picture_frame.RelativeHumidity = struct.unpack("f", self.heat_map.read(4))[0]
-
-                # 獲取圖像文件高度和寬度
-                picture_frame.Height = struct.unpack("H", self.heat_map.read(2))[0]
-                picture_frame.Width = struct.unpack("H", self.heat_map.read(2))[0]
-
-                # 獲取精度
-                picture_frame.Precision = self.heat_map.read(1)
-
+            
                 # 移動文件指針到 IRData 的開始位置
                 self.heat_map.seek(64)
 
                 # 讀取溫度矩陣
-                matrix_size = picture_frame.Width * picture_frame.Height
-                picture_frame.IRData = struct.unpack('h' * matrix_size, self.heat_map.read(2 * matrix_size))
+                matrix_size = self.picture_frame.Width * self.picture_frame.Height
+                self.picture_frame.IRData = struct.unpack('h' * matrix_size, self.heat_map.read(2 * matrix_size))
                 # 把IRData轉成np.array
-                picture_frame.IRData = np.array(picture_frame.IRData).reshape(picture_frame.Height, picture_frame.Width)
-                picture_frame.IRData = picture_frame.IRData / 10.0
-                
-                print(f'picture_frame.OptiTrans: {picture_frame.OptiTrans}')
-                print(f'picture_frame.Emiss: {picture_frame.Emiss}')
-                print(f'picture_frame.Distance: {picture_frame.Distance}')
-                print(f'picture_frame.AmbientTemperature: {picture_frame.AmbientTemperature}')
-                print(f'picture_frame.RelativeHumidity: {picture_frame.RelativeHumidity}')
-                print(f'picture_frame.Height: {picture_frame.Height}')
-                print(f'picture_frame.Width: {picture_frame.Width}')
-                print(f'picture_frame.Precision: {picture_frame.Precision}')
-                print(f'picture_frame.IRData: {picture_frame.IRData}')
-
-
-                return picture_frame.IRData
+                self.picture_frame.IRData = np.array(self.picture_frame.IRData).reshape(self.picture_frame.Height, self.picture_frame.Width)
+                self.picture_frame.IRData = self.picture_frame.IRData / 10.0
+                print(self.picture_frame.IRData)
+            
+                return self.picture_frame.IRData
             finally:
-
+                
                 self.heat_map.seek(0)
+                
             
         
         
