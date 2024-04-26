@@ -28,7 +28,7 @@ class Thermal_DS4025FT():
         return input_name.hexdigest().lower()
 
 
-    def login_thermal_camera(self, url: str) -> dict:
+    def LoginThermalCamera(self, url: str) -> dict:
 
         login_response = requests.get(url)
 
@@ -66,12 +66,16 @@ class Thermal_DS4025FT():
         # x is [0-8191], y is [0-8191]
         if x < 0 or x > 8191 or y < 0 or y > 8191:
             raise ValueError("x or y out of range.")
+        
         url = f'http://{self.ip_address}/cgi-bin/RadiometryManager.cgi?action=getRandomPointTemper&channel=2&coordinate[0]={x}&coordinate[1]={y}'
-        header = self.login_thermal_camera(url=url)
+        header = self.LoginThermalCamera(url=url)
+
         if header:
             response = requests.get(url, headers=header)
             if response.status_code == 200:
                 return response.text
+            
+        raise ValueError("Failed to get point temperature.")
 
 
     def setHeatMapFormat(self, format: str = "IR-SGCC-FIR64") -> bool:
@@ -83,7 +87,7 @@ class Thermal_DS4025FT():
 
         if format in ["IR-SGCC", "IR-SGCC-FIR64", "IR-SHEEN"]:
             url = f'http://{self.ip_address}/cgi-bin/configManager.cgi?action=setConfig&HeatImagingThermometry.HeatMapFormat={format}'
-            header = self.login_thermal_camera(url=url)
+            header = self.LoginThermalCamera(url=url)
             if header:
                 response = requests.get(url, headers=header)
                 if response.text == "OK\n":
@@ -94,7 +98,7 @@ class Thermal_DS4025FT():
     
     def getHeatMap(self) -> None:
         url = f'http://{self.ip_address}/cgi-bin/RPC_Loadfile/RadiometryHeatMap.jpg&channel=2'
-        header = self.login_thermal_camera(url=url)
+        header = self.LoginThermalCamera(url=url)
         if header:
             response = requests.get(url, headers=header, stream=True)
             if response.status_code == 200:
@@ -103,8 +107,8 @@ class Thermal_DS4025FT():
                 raise ValueError("Failed to get heat map.")
             
 
-    def getTemperatureMartix(self) -> None:
-        
+    def getHostTemperatureAndPosition(self) -> tuple:
+        self.getHeatMap()
         
         # 移動文件指針到 IRData 的開始位置
         self.heat_map.seek(64)
@@ -115,12 +119,10 @@ class Thermal_DS4025FT():
         # 把IRData轉成np.array
         self.IRData = np.array(self.IRData).reshape(self.__IRHeight, self.__IRWidth)
         max_temp = np.max(self.IRData)
-        max_temp_position = np.unravel_index(np.argmax(self.IRData), self.IRData.shape)
-        print(f'max_temp: {max_temp}, max_temp_position: {max_temp_position}')
-    
-
-
-                
+        max_temp_position = np.unravel_index(np.argmax(self.IRData), self.IRData.shape) # [y, x]
+        max_temp_position = (max_temp_position[1], max_temp_position[0]) # [x, y]
+        
+        return max_temp, max_temp_position
             
         
         
@@ -166,8 +168,8 @@ def main():
     try:
         while True:
 
-            thermalCamera.getHeatMap()
-            thermalCamera.getTemperatureMartix()
+
+            print(thermalCamera.getHostTemperatureAndPosition())
             
             # ret, frame = vcap.read()    
             # if ret:
