@@ -7,8 +7,21 @@ import re
 import time
 import cv2 
 import numpy as np
+import struct
+import io
 
-
+class FirFrame:
+    def __init__(self):
+        self.FileFlag = bytes([0] * 4)
+        self.OptiTrans = 0.0
+        self.Emiss = 0.0
+        self.Distance = 0.0
+        self.AmbientTemperature = 0.0
+        self.RelativeHumidity = 0.0
+        self.Width = 0
+        self.Height = 0
+        self.Precision = bytes([0])
+        self.IRData = None
 
 class Thermal_DS4025FT():
     def __init__(self, ip_address: str, account: str, password: str) -> None:
@@ -68,9 +81,9 @@ class Thermal_DS4025FT():
             if response.status_code == 200:
                 
                 return response.text
-       
-            
-    def setHeatMapFormat(self, format: str = "IR-SGCC") -> bool:
+
+
+    def setHeatMapFormat(self, format: str = "IR-SGCC-FIR64") -> bool:
         """
         DLT/664熱圖格式: "IR-SGCC", 
         FIR熱圖格式: "IR-SGCC-FIR64", 
@@ -93,11 +106,49 @@ class Thermal_DS4025FT():
         header = self.login_thermal_camera(url=url)
         if header:
             response = requests.get(url, headers=header, stream=True).raw
-            image = np.asarray(bytearray(response.read()), dtype="uint8")
-            image = cv2.imdecode(image, cv2.IMREAD_COLOR)
-            cv2.imshow('image',image)
-            cv2.waitKey(0)
-            return image
+            
+            file = io.BytesIO(response.read())
+            picture_frame = FirFrame()
+            
+            # 解析文件標記
+            picture_frame.FileFlag = file.read(4)
+
+            # 獲取光學透過率
+            picture_frame.OptiTrans = struct.unpack("f", file.read(4))[0]
+
+            # 獲取辐射率
+            picture_frame.Emiss = struct.unpack("f", file.read(4))[0]
+
+            # 獲取拍攝距離
+            picture_frame.Distance = struct.unpack("f", file.read(4))[0]
+
+            # 獲取環境溫度
+            picture_frame.AmbientTemperature = struct.unpack("f", file.read(4))[0]
+            print("AmbientTemperature:", picture_frame.AmbientTemperature)
+
+            # 獲取相對濕度
+            picture_frame.RelativeHumidity = struct.unpack("f", file.read(4))[0]
+
+            # 獲取圖像文件高度和寬度
+            picture_frame.Height = struct.unpack("H", file.read(2))[0]
+            picture_frame.Width = struct.unpack("H", file.read(2))[0]
+            print("Height:", picture_frame.Height, "Width:", picture_frame.Width)
+
+            # 獲取精度
+            picture_frame.Precision = file.read(1)
+
+            # 移動文件指針到 IRData 的開始位置
+            file.seek(64)
+
+            # 讀取溫度矩陣
+            matrix_size = picture_frame.Width * picture_frame.Height
+            picture_frame.IRData = struct.unpack('h' * matrix_size, file.read(2 * matrix_size))
+            # 把IRData轉成np.array
+            picture_frame.IRData = np.array(picture_frame.IRData).reshape(picture_frame.Height, picture_frame.Width)
+            picture_frame.IRData = picture_frame.IRData / 10.0
+            
+            print("溫度矩陣：", picture_frame.IRData.shape)
+            
         
         
     def getThermalStream(self, channel: int = 2, subtype: int = 0) -> cv2.VideoCapture|bool:
@@ -132,14 +183,18 @@ def main():
     password = "admin"
     ip_address = "192.168.1.108"
     thermalCamera = Thermal_DS4025FT(ip_address=ip_address, account=account, password=password)
-    # thermalCamera.setHeatMapFormat(format="IR-SGCC")
+    # thermalCamera.setHeatMapFormat(format="IR-SGCC-FIR64")
     # thermalCamera.getHeatMap()
+
+
+
     vcap = thermalCamera.getThermalStream()
     while True:
 
         ret, frame = vcap.read()    
-        sframe=cv2.resize(frame,(1110, 890))
-        cv2.imshow('VIDEO', sframe)
+        # sframe=cv2.resize(frame,(1110, 890))
+        cv2.imshow('VIDEO', frame)
+        print(frame.shape)
 
         key = cv2.waitKey(1)
         if key == 27:
