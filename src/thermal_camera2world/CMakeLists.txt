@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.8)
-project(thermal_ds4025ft)
+project(thermal_camera2world)
 
 if(CMAKE_COMPILER_IS_GNUCXX OR CMAKE_CXX_COMPILER_ID MATCHES "Clang")
   add_compile_options(-Wall -Wextra -Wpedantic)
@@ -32,10 +32,10 @@ include_directories(include)
 ament_python_install_package(${PROJECT_NAME})
 
 install(PROGRAMS
-  # scripts/test_thermal_ds4025ft.py
-  scripts/DS4025FT_ros2_node.py
-  # scripts/test_code.py
+  scripts/test_thermal_camera2world.py
   DESTINATION lib/${PROJECT_NAME}
 )
+
+
 
 ament_package()
