@@ -163,8 +163,6 @@ private:
             // std::cout << "計算最熱點溫度: " << max_temperature_ << std::endl;
             // std::cout << "================================================" << std::endl;
 
-
-            // TODO:增加request自動對焦
             
             // Publish pixel values
             auto pixel_msg = std::make_unique<std_msgs::msg::Int32MultiArray>();
@@ -193,6 +191,7 @@ private:
         }
     }
 
+    // ros2 service call /auto_focus thermal_msgs/srv/AutoFocus "{auto_focus: 'auto focus'}"
     void AutoFocus(
         const std::shared_ptr<thermal_msgs::srv::AutoFocus::Request> request,
         const std::shared_ptr<thermal_msgs::srv::AutoFocus::Response> response)
@@ -373,7 +372,6 @@ static void GetY16Data(short *y16, int length, void *ptr)
 {
     if (y16)
     {
-        // TODO:搞清楚length是啥？
         // std::cout << length << std::endl;    // 224256
         memcpy(thermal_data.Thermal_Y16_Image, y16, length * sizeof(short));
     }
