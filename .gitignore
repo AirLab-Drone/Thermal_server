@@ -1,9 +1,10 @@
+*.vscode
 
 # colcon build artifacts
 log/
 build/
 install/
+bag_files/
 
 # Thermal camera log file
 *.log
-*.vscode

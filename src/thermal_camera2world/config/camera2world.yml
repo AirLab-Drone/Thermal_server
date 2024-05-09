@@ -17,3 +17,13 @@ ds4025ft:
     - [0.0, 0.0, 0.0]
   LowerLeft: 
     - [0.0, 0.0, 0.0]
+
+Test:
+  UpperLeft:
+    - [316, 255]
+  UpperRight:
+    - [223, 165]
+  LowerRight:
+    - [295, 107]
+  LowerLeft: 
+    - [391, 191]
