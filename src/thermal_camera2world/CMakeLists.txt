@@ -11,6 +11,7 @@ find_package(ament_cmake REQUIRED)
 find_package(ament_cmake_python REQUIRED)
 find_package(rclcpp REQUIRED)
 find_package(rclpy REQUIRED)
+find_package(thermal_msgs REQUIRED)
 
 
 # /* --------------------- Include Cpp "include" directory -------------------- */

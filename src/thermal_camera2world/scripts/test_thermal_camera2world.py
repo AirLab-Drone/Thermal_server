@@ -19,6 +19,7 @@ from sensor_msgs.msg import Image
 from std_msgs.msg import Float32
 from std_msgs.msg import Float32MultiArray
 from std_msgs.msg import Int32MultiArray
+from thermal_msgs.msg import ThermalAlert
 
 
 RED = (0, 0, 255)
@@ -45,8 +46,7 @@ class Thermal_camera_to_world(Node):
 
 
         # ------------- Republish World Coordinate and Hot Spot Temperature ------------ #
-        self.pub_world_coordinate = self.create_publisher(Float32MultiArray, 'hot_spot_temperature_world_pos', 10)
-        self.pub_hot_spot_temperature = self.create_publisher(Float32, 'hot_spot_temperature_world', 10)
+        self.pub_thermal_alert = self.create_publisher(ThermalAlert, 'thermal_alert', 10)
         self.world_coordinate_x = 0.0
         self.world_coordinate_y = 0.0
 
@@ -113,9 +113,15 @@ class Thermal_camera_to_world(Node):
     def hot_spot_temperature_callback(self, msg) -> None:
         threshold_temperature = self.get_parameter('Threshold_Temperature').get_parameter_value().double_value
         self.hot_spot_temperature = msg.data
+
+        thermal_alert = ThermalAlert()
+        thermal_alert.x = float(self.world_coordinate_x)    
+        thermal_alert.y = float(self.world_coordinate_y)
+        thermal_alert.temperature = self.hot_spot_temperature
+
         if self.hot_spot_temperature > threshold_temperature:
-            self.pub_world_coordinate.publish(Float32MultiArray(data=[self.world_coordinate_x, self.world_coordinate_y]))
-            self.pub_hot_spot_temperature.publish(Float32(data=self.hot_spot_temperature))
+            self.pub_thermal_alert.publish(thermal_alert)
+
             print(f'x:{self.world_coordinate_x}, y:{self.world_coordinate_y}, temperature:{self.hot_spot_temperature}')
 
 
@@ -187,6 +193,8 @@ class Thermal_camera_to_world(Node):
 
             # 提取轉換後的座標
             self.world_coordinate_x, self.world_coordinate_y = corrected_point[0][0]
+
+            
             # print(f"Corrected point: {self.world_coordinate_x:.2f}, {self.world_coordinate_y:.2f}")
 
         cv2.waitKey(1)
