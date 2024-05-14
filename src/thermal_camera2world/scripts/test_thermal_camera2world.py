@@ -17,6 +17,7 @@ from cv_bridge import CvBridge, CvBridgeError
 
 from sensor_msgs.msg import Image
 from std_msgs.msg import Float32
+from std_msgs.msg import Float32MultiArray
 from std_msgs.msg import Int32MultiArray
 
 
@@ -40,6 +41,14 @@ class Thermal_camera_to_world(Node):
         self.declare_parameter('World_UpperRight', [29.7, 21.0])
         self.declare_parameter('World_LowerRight', [29.7, 0.0])
         self.declare_parameter('World_LowerLeft', [0.0, 0.0])
+        self.declare_parameter('Threshold_Temperature', 60.0)
+
+
+        # ------------- Republish World Coordinate and Hot Spot Temperature ------------ #
+        self.pub_world_coordinate = self.create_publisher(Float32MultiArray, 'hot_spot_temperature_world_pos', 10)
+        self.pub_hot_spot_temperature = self.create_publisher(Float32, 'hot_spot_temperature_world', 10)
+        self.world_coordinate_x = 0.0
+        self.world_coordinate_y = 0.0
 
 
         # ------------------------------- Thermal image ------------------------------ #
@@ -71,14 +80,14 @@ class Thermal_camera_to_world(Node):
         self.hot_spot_pixel = [0, 0]
 
 
-        # ---------------------------------- opencv windows ---------------------------------- #
+        # ---------------------------------- opencv windows -------------------------- #
         self.thermal_origin_image_window_name = "Thermal Image"
         self.thermal_debug_image_window_name = "Thermal Image Debug"
 
-        # ---------------------------- add mouse listener ---------------------------- #
-        cv2.namedWindow(self.thermal_debug_image_window_name)
-        cv2.setMouseCallback(self.thermal_debug_image_window_name, self.SelectFourConerCallback)
+
+        # ---------------- four pixel coordinate of the thermal image ---------------- #
         self.four_coner_points = []
+
 
 
     def SelectFourConerCallback(self, event, x, y, flags, param) -> None:
@@ -102,12 +111,18 @@ class Thermal_camera_to_world(Node):
 
 
     def hot_spot_temperature_callback(self, msg) -> None:
+        threshold_temperature = self.get_parameter('Threshold_Temperature').get_parameter_value().double_value
         self.hot_spot_temperature = msg.data
+        if self.hot_spot_temperature > threshold_temperature:
+            self.pub_world_coordinate.publish(Float32MultiArray(data=[self.world_coordinate_x, self.world_coordinate_y]))
+            self.pub_hot_spot_temperature.publish(Float32(data=self.hot_spot_temperature))
+            print(f'x:{self.world_coordinate_x}, y:{self.world_coordinate_y}, temperature:{self.hot_spot_temperature}')
 
 
     def DrawPoints(self, image:cv2.Mat, points:list, color:tuple, radius:int=-1) -> None:
         for point in points:
             cv2.circle(image, point, 3, color, radius)
+
 
     def DrawLine(self, image:cv2.Mat, points:list, color:tuple, width:int=2) -> None:
         if len(points) < 2:
@@ -120,6 +135,10 @@ class Thermal_camera_to_world(Node):
 
     def thermal_image_callback(self, msg) -> None:
 
+        # ---------------------------- add mouse listener ---------------------------- #
+        cv2.namedWindow(self.thermal_debug_image_window_name)
+        cv2.setMouseCallback(self.thermal_debug_image_window_name, self.SelectFourConerCallback)
+
         # ------------------------- get four corner world coodinate ------------------------- #
         # type is double array [x, y]
         world_upper_left = self.get_parameter('World_UpperLeft').get_parameter_value().double_array_value
@@ -127,7 +146,6 @@ class Thermal_camera_to_world(Node):
         world_lower_right = self.get_parameter('World_LowerRight').get_parameter_value().double_array_value
         world_lower_left = self.get_parameter('World_LowerLeft').get_parameter_value().double_array_value
         # print(upper_left, upper_right, lower_right, lower_left)
-
 
 
         # ----------------------- ros2 image topic to cv2 image ---------------------- #
@@ -167,39 +185,9 @@ class Thermal_camera_to_world(Node):
             # 將點進行轉換
             corrected_point = cv2.perspectiveTransform(point.reshape(-1, 1, 2), h)
 
-            # # 提取轉換後的座標
-            corrected_x, corrected_y = corrected_point[0][0]
-
-            print(f"Corrected point: ({corrected_x:.2f} cm, {corrected_y:.2f} cm)")
-        # cv2.circle(
-        #     corrected_area,
-        #     (int(corrected_x), int(corrected_y)),
-        #     5,
-        #     PURPLE,
-        #     -1,
-        # )
-        # cv2.putText(
-        #     corrected_area,
-        #     f"Corrected point: ({(corrected_x-o)*2:.2f}, {(corrected_y-o)*2:.2f})",
-        #     (int(corrected_x + 5), int(corrected_y - 5)),
-        #     cv2.FONT_HERSHEY_DUPLEX,
-        #     0.5,
-        #     PURPLE,
-        #     1,
-        #     cv2.LINE_AA,
-        # )
-        # cv2.putText(
-        #     corrected_area,
-        #     f"Origin",
-        #     (int(o + 8), int(o - 8)),
-        #     cv2.FONT_HERSHEY_DUPLEX,
-        #     0.6,
-        #     BLUE,
-        #     1,
-        #     cv2.LINE_AA,
-        # )
-
-        # cv2.imshow("Corrected Area", corrected_area)
+            # 提取轉換後的座標
+            self.world_coordinate_x, self.world_coordinate_y = corrected_point[0][0]
+            # print(f"Corrected point: {self.world_coordinate_x:.2f}, {self.world_coordinate_y:.2f}")
 
         cv2.waitKey(1)
 

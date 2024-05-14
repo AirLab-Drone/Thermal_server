@@ -1,0 +1,14 @@
+/thermal_camera_to_world:
+  ros__parameters:
+    World_UpperLeft: [1.19, 3.35]
+    World_UpperRight: [3.61, 2.05]
+    World_LowerRight: [1.50, 0.62]
+    World_LowerLeft: [0.40, 1.50]
+    Threshold_Temperature: 60.0
+
+  # ds4025ft:
+  #   UpperLeft: [0.0, 0.0]
+  #   UpperRight: [0.0, 0.0]
+  #   LowerRight: [0.0, 0.0]
+  #   LowerLeft: [0.0, 0.0]
+
