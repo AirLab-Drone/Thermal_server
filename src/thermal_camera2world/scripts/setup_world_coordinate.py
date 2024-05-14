@@ -155,51 +155,7 @@ class Thermal_camera_to_world(Node):
 
             # print(target_area)
 
-
-
             h, _ = cv2.findHomography(selected_area, target_area)   # numpy array
-
-            # corrected_area = cv2.warpPerspective(self.cv_thermal_image, h, (1000, 800))
-            
-            point = np.array(
-                self.hot_spot_pixel, dtype=np.float32
-            )
-            # 將點進行轉換
-            corrected_point = cv2.perspectiveTransform(point.reshape(-1, 1, 2), h)
-
-            # # 提取轉換後的座標
-            corrected_x, corrected_y = corrected_point[0][0]
-
-            print(f"Corrected point: ({corrected_x:.2f} cm, {corrected_y:.2f} cm)")
-        # cv2.circle(
-        #     corrected_area,
-        #     (int(corrected_x), int(corrected_y)),
-        #     5,
-        #     PURPLE,
-        #     -1,
-        # )
-        # cv2.putText(
-        #     corrected_area,
-        #     f"Corrected point: ({(corrected_x-o)*2:.2f}, {(corrected_y-o)*2:.2f})",
-        #     (int(corrected_x + 5), int(corrected_y - 5)),
-        #     cv2.FONT_HERSHEY_DUPLEX,
-        #     0.5,
-        #     PURPLE,
-        #     1,
-        #     cv2.LINE_AA,
-        # )
-        # cv2.putText(
-        #     corrected_area,
-        #     f"Origin",
-        #     (int(o + 8), int(o - 8)),
-        #     cv2.FONT_HERSHEY_DUPLEX,
-        #     0.6,
-        #     BLUE,
-        #     1,
-        #     cv2.LINE_AA,
-        # )
-
-        # cv2.imshow("Corrected Area", corrected_area)
 
         cv2.waitKey(1)
 

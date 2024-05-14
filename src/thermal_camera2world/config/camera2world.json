@@ -1,0 +1,14 @@
+{
+    "ipt430m":{
+        "UpperLeft":[1.19, 3.35],
+        "UpperRight":[3.61, 2.05],
+        "LowerRight":[0.50, 0.62],
+        "LowerLeft":[0.40, 1.50]
+    },
+    "ds4025ft":{
+        "UpperLeft":[1.19, 3.35],
+        "UpperRight":[3.61, 2.05],
+        "LowerRight":[0.50, 0.62],
+        "LowerLeft":[0.40, 1.50]
+    }
+  }
