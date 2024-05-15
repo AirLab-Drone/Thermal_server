@@ -33,7 +33,7 @@ include_directories(include)
 ament_python_install_package(${PROJECT_NAME})
 
 install(PROGRAMS
-  scripts/test_thermal_camera2world.py
+  scripts/thermal_camera2world.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

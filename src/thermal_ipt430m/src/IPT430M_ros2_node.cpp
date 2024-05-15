@@ -1,7 +1,7 @@
 
 
 
-// TODO: export LD_LIBRARY_PATH=/home/yuan/thermal_camera/Thermal_IPT430M/lib:$LD_LIBRARY_PATH
+// ! export LD_LIBRARY_PATH=/home/yuan/thermal_camera/Thermal_IPT430M/lib:$LD_LIBRARY_PATH
 // set LD_LIBRARY_PATH in launch file
 // use "ros2 launch thermal_ipt430m thermal_ipt430m.launch.py " 
 
