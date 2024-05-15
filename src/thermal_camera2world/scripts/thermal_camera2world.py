@@ -119,10 +119,9 @@ class Thermal_camera_to_world(Node):
         thermal_alert.y = float(self.world_coordinate_y)
         thermal_alert.temperature = self.hot_spot_temperature
 
-        if self.hot_spot_temperature > threshold_temperature:
+        if (self.hot_spot_temperature > threshold_temperature) and (self.four_coner_points.__len__() == 4):
             self.pub_thermal_alert.publish(thermal_alert)
-
-            print(f'x:{self.world_coordinate_x}, y:{self.world_coordinate_y}, temperature:{self.hot_spot_temperature}')
+            print(f'x:{self.world_coordinate_x:.2f}, y:{self.world_coordinate_y:.2f}, temperature:{self.hot_spot_temperature:.2f}')
 
 
     def DrawPoints(self, image:cv2.Mat, points:list, color:tuple, radius:int=-1) -> None:
@@ -161,7 +160,7 @@ class Thermal_camera_to_world(Node):
 
         self.thermal_image_debug = self.thermal_image.copy()
 
-        self.DrawPoints(self.thermal_image_debug, [self.hot_spot_pixel], BLUE)
+        self.DrawPoints(self.thermal_image_debug, [self.hot_spot_pixel], PURPLE)
 
 
         if self.four_coner_points:
@@ -173,12 +172,6 @@ class Thermal_camera_to_world(Node):
         if self.four_coner_points.__len__() == 4:
             target_area = np.array([world_upper_left, world_upper_right, world_lower_right, world_lower_left], dtype=np.float32)
             selected_area = np.array(self.four_coner_points, dtype=np.float32)
-
-        
-        
-
-            # print(target_area)
-
 
 
             h, _ = cv2.findHomography(selected_area, target_area)   # numpy array
