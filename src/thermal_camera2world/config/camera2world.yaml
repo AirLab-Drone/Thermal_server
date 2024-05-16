@@ -5,6 +5,7 @@
     World_LowerRight: [1.50, 0.62]
     World_LowerLeft: [0.40, 1.50]
     Threshold_Temperature: 60.0
+    Alert_Waiting_Time: 5
 
   # ds4025ft:
   #   UpperLeft: [0.0, 0.0]
