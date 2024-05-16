@@ -47,6 +47,7 @@ struct ThermalData
     short *Thermal_Y16_Image;
     int ir_output_w;
     int ir_output_h;
+    int ir_output_size;
 
     // 構造函式
     ThermalData()
@@ -56,6 +57,7 @@ struct ThermalData
         Thermal_Y16_Image = nullptr;
         ir_output_w = 0;
         ir_output_h = 0;
+        ir_output_size = 0;
     }
 
     // 解構函式
@@ -122,55 +124,36 @@ int main(int argc, char *argv[])
     std::cout << "[Info] Login device success" << std::endl;
 
 
-    // SGP_THERMOMETRY_PARAM info;
-    // memset(&info, 0x00, sizeof(SGP_THERMOMETRY_PARAM));
-    // ret = SGP_GetThermometryParam(handle,&info);
-    // if (ret == SGP_OK )
-    // {
-    //     parm.dist = 5; //opW+qrJ 5 s
-    //     ret =
-    //     SGP_SetThermometryParam(handle,info);
-    // }
-
-
     ret = SGP_GetGeneralInfo(handle, &info);
 
-
-    int ir_model_w = info.ir_model_w;   // 红外模组宽   0
-    int ir_model_h = info.ir_model_h;   // 红外模组高   0
     thermal_data.ir_output_w = info.ir_output_w; // 红外通道输出宽   384
     thermal_data.ir_output_h = info.ir_output_h; // 红外通道输出高   288
 
 
-    int ir_model_size = 0;
-    int ir_output_size = 0;
-    if (ir_model_w && ir_model_h)
-    {
-        ir_model_size = ir_model_w * ir_model_h;
-    }
     if ((thermal_data.ir_output_w != 0) && (thermal_data.ir_output_h != 0))
     {
-        ir_output_size = thermal_data.ir_output_w * thermal_data.ir_output_h;
+        thermal_data.ir_output_size = thermal_data.ir_output_w * thermal_data.ir_output_h;
+        std::cout << "[Info] Thermal IR Output Width: " << thermal_data.ir_output_w << std::endl; 
+        std::cout << "[Info] Thermal IR Output Height: " << thermal_data.ir_output_h << std::endl; 
+        std::cout << "[Info] Thermal IR Output Size: " << thermal_data.ir_output_size << std::endl; 
     }
+
+    
 
     /* ---------------------------------- 分配空間 ---------------------------------- */
     if (thermal_data.TempMatrix == nullptr)
     {
-        thermal_data.TempMatrix = (float *)calloc(ir_output_size, sizeof(float));
+        thermal_data.TempMatrix = (float *)calloc(thermal_data.ir_output_size, sizeof(float));
+        std::cout << "[Info] Alloc TempMatrix success" << std::endl; 
     }
 
     if (thermal_data.Thermal_RGB_Image == nullptr)
     {
-        thermal_data.Thermal_RGB_Image = (unsigned char *)malloc(3 * ir_output_size);
+        thermal_data.Thermal_RGB_Image = (unsigned char *)malloc(3 * thermal_data.ir_output_size);
+        std::cout << "[Info] Alloc Thermal_RGB_Image success" << std::endl; 
     }
 
-    if (thermal_data.Thermal_Y16_Image == nullptr)
-    {
-        thermal_data.Thermal_Y16_Image = (short *)malloc(224256 * sizeof(short));
-    }
-    
 
-    
 
     ret = SGP_OpenIrVideo(handle, GetIrRtsp, nullptr);
     if (ret != SGP_OK)
@@ -182,17 +165,44 @@ int main(int argc, char *argv[])
     }
     std::cout << "[Info] OpenIrVideo susss" << std::endl;
 
-    while (true)
+    const char path[] = "./screenpic.jpg";
+    ret = SGP_GetHeatMap(handle, path);
+    if (ret == SGP_OK)
     {
-        cv::Mat frameMat = convertRGBToMat(thermal_data.Thermal_RGB_Image);
-        cv::imshow("Thermal Image", frameMat);
-
-        cv::waitKey(1);
-        if (cv::waitKey(1) == 27)   // ESC to quit
-        {
-            break;
-        }
+        std::cout << "GetHeatMap success" << std::endl;
     }
+
+
+
+
+
+
+
+    // while (true)
+    // {
+    //     // cv::Mat frameMat = convertRGBToMat(thermal_data.Thermal_RGB_Image);
+    //     // cv::imshow("Thermal Image", frameMat);
+
+
+    //     ret = SGP_GetImageTemps(handle, thermal_data.TempMatrix, thermal_data.ir_output_size, 1);
+    //     if (ret != SGP_OK)
+    //     {
+
+    //         std::cerr << "[Error] GetImageTemps error" << ret << std::endl;
+    //         SGP_Logout(handle);
+    //         SGP_UnInitDevice(handle);
+    //         return ret;
+    //     }
+
+    //     std::cout << "Max Temperature: " << *std::max_element(thermal_data.TempMatrix, thermal_data.TempMatrix + thermal_data.ir_output_size) << std::endl;
+
+
+        // cv::waitKey(1);
+        // if (cv::waitKey(1) == 27)   // ESC to quit
+        // {
+        //     break;
+        // }
+    // }
 
     
 
@@ -201,28 +211,7 @@ int main(int argc, char *argv[])
 
 
 
-    // /* --------------------------------- 獲取熱像儀資訊 -------------------------------- */
-    // int ir_model_w = info.ir_model_w;   // 红外模组宽
-    // int ir_model_h = info.ir_model_h;   // 红外模组高
-    // int ir_output_w = info.ir_output_w; // 红外通道输出宽
-    // int ir_output_h = info.ir_output_h; // 红外通道输出高
-    // int ir_model_size = 0;
-    // int ir_output_size = 0;
-    // if (ir_model_w && ir_model_h)
-    // {
-    //     ir_model_size = ir_model_w * ir_model_h;
-    // }
-    // if (ir_output_w && ir_output_h)
-    // {
-    //     ir_output_size = ir_output_w * ir_output_h;
-    // }
-    // std::cout << "[Info] Infra Model Width: " << ir_model_w << std::endl;    // 384
-    // std::cout << "[Info] Infra Model Height: " << ir_model_h << std::endl;   // 288
-    // std::cout << "[Info] Infra Model SIZE: " << ir_model_size << std::endl;  //
-    // std::cout << "[Info] Infra Output Width: " << ir_output_w << std::endl;  // 512
-    // std::cout << "[Info] Infra Output Height: " << ir_output_h << std::endl; // 384
-    // std::cout << "[Info] Infra Model SIZE: " << ir_output_size << std::endl; //
-
+   
     // /* ---------------------------------- 定義變數 ---------------------------------- */
     // int IRModelHotSpot_x, IRModelHotSpot_y, IRModelColdSpot_x, IRModelColdSpot_y; // 紅外模組座標
     // int HotSpot_x, HotSpot_y, ColdSpot_x, ColdSpot_y;                             // 輸出圖像座標
@@ -290,14 +279,6 @@ static void GetIrRtsp(unsigned char *outdata, int w, int h, void *ptr)
     }
 }
 
-static void GetY16Data(short *y16, int length, void *ptr)
-{
-    if (y16)
-    {
-        // std::cout << length << std::endl;    // 224256
-        memcpy(thermal_data.Thermal_Y16_Image, y16, length * sizeof(short));
-    }
-}
 
 cv::Mat convertRGBToMat(const unsigned char *rgbData)
 {
@@ -307,10 +288,3 @@ cv::Mat convertRGBToMat(const unsigned char *rgbData)
     return frameMat.clone();
 }
 
-cv::Mat convertY16ToGray(const short *y16Data)
-{
-    cv::Mat frameMat(thermal_data.ir_output_h, thermal_data.ir_output_w, CV_16UC1, const_cast<short *>(y16Data));
-    cv::Mat gray8Bit;
-    frameMat.convertTo(gray8Bit, CV_8U); // Scale to 0-255
-    return gray8Bit;
-}
