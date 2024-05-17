@@ -125,7 +125,7 @@ public:
 
         auto_focus_srv_ = this->create_service<thermal_msgs::srv::AutoFocus>("auto_focus", std::bind(&ThermalCameraNode::AutoFocus, this, _1, _2));
 
-        timer_ = this->create_wall_timer(std::chrono::milliseconds(200), std::bind(&ThermalCameraNode::publishThermalData, this));
+        timer_ = this->create_wall_timer(std::chrono::milliseconds(10), std::bind(&ThermalCameraNode::publishThermalData, this));
 
     }
 
