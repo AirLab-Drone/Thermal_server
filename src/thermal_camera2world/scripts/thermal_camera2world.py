@@ -48,7 +48,7 @@ class Thermal_camera_to_world(Node):
         self.declare_parameter("World_UpperRight", [29.7, 21.0])
         self.declare_parameter("World_LowerRight", [29.7, 0.0])
         self.declare_parameter("World_LowerLeft", [0.0, 0.0])
-        self.declare_parameter("Threshold_Temperature", 60.0)
+        self.declare_parameter("Threshold_Temperature", 80.0)
         self.declare_parameter("Alert_Waiting_Time", 5)
 
         # ------------- Republish World Coordinate and Hot Spot Temperature ------------ #
@@ -92,7 +92,7 @@ class Thermal_camera_to_world(Node):
         # ---------------- four pixel coordinate of the thermal image ---------------- #
         self.four_coner_points = []
 
-        self.last_time = None
+        self.detcet_fire_time = None
 
     def SelectFourConerCallback(self, event, x, y, flags, param) -> None:
         # add the point to the list if you click left button
@@ -138,25 +138,24 @@ class Thermal_camera_to_world(Node):
             self.four_coner_points.__len__() == 4
         ):
 
-            if not self.last_time:
-                self.last_time = Clock().now()
-                print(f"[Info] Didn't Detect Fire...")
+            if not self.detcet_fire_time:
+                self.detcet_fire_time = Clock().now()
+                # print(f"[Info] Didn't Detect Fire...")
             else:
-                delta_time = Clock().now() - self.last_time
+                delta_time = Clock().now() - self.detcet_fire_time
                 print(
                     f"[Info] Detect Fire! in {delta_time.nanoseconds/1e9:.2f} seconds"
                 )
 
                 if delta_time > Duration(seconds=alert_waiting_time):
-                    self.pub_thermal_alert.publish(self.thermal_alert)
-                    
-                    print(f"[Info] Pubilc thermal alert!")
-                    print(f"       World coordinate: [x: {self.world_coordinate_x:.2f}, y: {self.world_coordinate_y:.2f}]")
-                    print(f"       Temperature:{self.hot_spot_temperature:.2f}")
-                    
 
+                    self.pub_thermal_alert.publish(self.thermal_alert)
+                    print(f"[Info] Pubilc thermal alert!")
+                    print(f"[Info] World coordinate: [x: {self.world_coordinate_x:.2f}, y: {self.world_coordinate_y:.2f}]")
+                    print(f"[Info] Temperature:{self.hot_spot_temperature:.2f}")
+                
         else:
-            self.last_time = None
+            self.detcet_fire_time = None
 
     def DrawPoints(
         self, image: cv2.Mat, points: list, color: tuple, radius: int = -1
@@ -214,7 +213,7 @@ class Thermal_camera_to_world(Node):
 
         self.thermal_image_debug = self.thermal_image.copy()
 
-        self.DrawPoints(self.thermal_image_debug, [self.hot_spot_pixel], PURPLE)
+        self.DrawPoints(self.thermal_image_debug, [self.hot_spot_pixel], BLUE)
 
         if self.four_coner_points:
             self.DrawPoints(self.thermal_image_debug, self.four_coner_points, RED)
