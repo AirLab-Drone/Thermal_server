@@ -7,7 +7,7 @@ from cv_bridge import CvBridge
 import cv2
 
 
-from thermal_ds4025ft.module_to_import import Thermal_DS4025FT
+from thermal_ds4025ft.thermal_ds4025ft import Thermal_DS4025FT
 
 
 
