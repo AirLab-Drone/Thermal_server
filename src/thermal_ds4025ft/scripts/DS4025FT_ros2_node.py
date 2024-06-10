@@ -6,7 +6,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 import cv2
 
-
+# from package name.module import class
 from thermal_ds4025ft.thermal_ds4025ft import Thermal_DS4025FT
 
 
