@@ -6,6 +6,11 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 import cv2
 
+
+from thermal_ds4025ft.module_to_import import Thermal_DS4025FT
+
+
+
 class DS4025FT_ros2_node(Node):
 
     def __init__(self, vcap):
@@ -40,4 +45,11 @@ def main(args=None):
         rclpy.shutdown()
 
 if __name__ == '__main__':
-    main()
+    # main()
+    account = "admin"
+    password = "admin"
+    ip_address = "192.168.1.108"
+
+    thermal_camera = Thermal_DS4025FT(account, password, ip_address)
+
+    print("done")

@@ -63,6 +63,12 @@ class Thermal_DS4025FT():
         
 
     def getPointTemperature(self, x:int, y:int) -> float:
+        """
+        Get temperature at a pixel position on the thermal camera.
+            :param x: int, x position of the point, [0-8191]
+            :param y: int, y position of the point, [0-8191]
+            :return: float, temperature at the point.
+        """
         # x is [0-8191], y is [0-8191]
         if x < 0 or x > 8191 or y < 0 or y > 8191:
             raise ValueError("x or y out of range.")
@@ -97,6 +103,10 @@ class Thermal_DS4025FT():
             
     
     def getHeatMap(self) -> None:
+        """
+        Get heat map from DS4025FT thermal camera.
+        this function will save the heat map to self.heat_map
+        """
         url = f'http://{self.ip_address}/cgi-bin/RPC_Loadfile/RadiometryHeatMap.jpg&channel=2'
         header = self.LoginThermalCamera(url=url)
         if header:
@@ -145,14 +155,7 @@ class Thermal_DS4025FT():
         
 
 
-        
-
-
     
-
-
-
-
 def main():
     account = "admin"
     password = "admin"
