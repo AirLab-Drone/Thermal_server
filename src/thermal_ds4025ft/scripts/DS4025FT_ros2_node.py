@@ -39,7 +39,7 @@ class DS4025FT_ros2_node(Node):
         self.max_temperature_pub = self.create_publisher(Float32, 'hot_spot_temperature', 10)
 
 
-        self.publish_temperature_pos = self.create_timer(0.5, self.pos_temp_callback)
+        self.publish_temperature_pos = self.create_timer(1, self.pos_temp_callback)
         self.publish_image = self.create_timer(0.0001, self.image_callback)
 
 
