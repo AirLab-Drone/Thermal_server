@@ -15,11 +15,16 @@ class Thermal_DS4025FT():
         self.__IRWidth = 384
         self.__IRHeight = 288
 
+        self.__Width = 1280
+        self.__Height = 1024
+
         self.ip_address = ip_address
         self.account = account
         self.password = password
         self.heat_map = None
         self.IRData = None
+
+        self.setHeatMapFormat()
 
         
     def md5value(self, key) -> str:
@@ -89,6 +94,8 @@ class Thermal_DS4025FT():
         DLT/664熱圖格式: "IR-SGCC", 
         FIR熱圖格式: "IR-SGCC-FIR64", 
         私有熱圖格式: "IR-SHEEN"
+
+        default: "IR-SGCC-FIR64"
         """
 
         if format in ["IR-SGCC", "IR-SGCC-FIR64", "IR-SHEEN"]:
@@ -129,8 +136,9 @@ class Thermal_DS4025FT():
         # 把IRData轉成np.array
         self.IRData = np.array(self.IRData).reshape(self.__IRHeight, self.__IRWidth)
         max_temp = np.max(self.IRData)
+        max_temp = float(max_temp / 10.0) # 轉成攝氏溫度
         max_temp_position = np.unravel_index(np.argmax(self.IRData), self.IRData.shape) # [y, x]
-        max_temp_position = (max_temp_position[1], max_temp_position[0]) # [x, y]
+        max_temp_position = [max_temp_position[1], max_temp_position[0]] # [x, y]
         
         return max_temp, max_temp_position
             
@@ -155,27 +163,28 @@ class Thermal_DS4025FT():
         
 
 
-    
-def main():
+
+if __name__ == "__main__":
     account = "admin"
     password = "admin"
     ip_address = "192.168.1.108"
     thermalCamera = Thermal_DS4025FT(ip_address=ip_address, account=account, password=password)
     # thermalCamera.setHeatMapFormat(format="IR-SGCC-FIR64")
-    thermalCamera.getHeatMap()
+    # thermalCamera.getHeatMap()
 
 
 
-    vcap = thermalCamera.getThermalStream()
+    # vcap = thermalCamera.getThermalStream()
 
     try:
         while True:
+            _, pos = thermalCamera.getHostTemperatureAndPosition()
 
-
-            print(thermalCamera.getHostTemperatureAndPosition())
+            print(pos, type(pos))
             
             # ret, frame = vcap.read()    
             # if ret:
+            #     print(frame.shape)
             #     cv2.imshow('VIDEO', frame)
 
             # key = cv2.waitKey(1)
@@ -185,7 +194,3 @@ def main():
         pass
         # vcap.release()
         # cv2.destroyAllWindows()
-
-
-if __name__ == "__main__":
-    main()
