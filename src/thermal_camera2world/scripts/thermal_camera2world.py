@@ -61,7 +61,7 @@ class Thermal_camera_to_world(Node):
 
         # ------------------------------- Thermal image ------------------------------ #
         self.sub_thermal_image = self.create_subscription(
-            Image, "/thermal_image", self.thermal_image_callback, 10
+            Image, "thermal_image", self.thermal_image_callback, 10
         )
         self.sub_thermal_image  # prevent unused variable warning
         self.cv_bridge = CvBridge()
@@ -70,7 +70,7 @@ class Thermal_camera_to_world(Node):
 
         # --------------------------- Hot spot temperature --------------------------- #
         self.sub_hot_spot_temperature = self.create_subscription(
-            Float32, "/hot_spot_temperature", self.hot_spot_temperature_callback, 10
+            Float32, "hot_spot_temperature", self.hot_spot_temperature_callback, 10
         )
         self.sub_hot_spot_temperature  # prevent unused variable warning
         self.hot_spot_temperature = 0.0
@@ -78,7 +78,7 @@ class Thermal_camera_to_world(Node):
         # ------------------------------ Hot spot pixel ------------------------------ #
         self.sub_hot_spot_pixel = self.create_subscription(
             Int32MultiArray,
-            "/hot_spot_temperature_pos",
+            "hot_spot_temperature_pos",
             self.hot_spot_pixel_callback,
             10,
         )
@@ -133,19 +133,19 @@ class Thermal_camera_to_world(Node):
         self.thermal_alert.temperature = self.hot_spot_temperature
         self.thermal_alert.x = float(self.world_coordinate_x)
         self.thermal_alert.y = float(self.world_coordinate_y)
-
         if (self.hot_spot_temperature > threshold_temperature) and (
             self.four_coner_points.__len__() == 4
         ):
 
             if not self.detcet_fire_time:
                 self.detcet_fire_time = Clock().now()
-                # print(f"[Info] Didn't Detect Fire...")
+                print(f"[Info] Didn't Detect Fire...")
             else:
                 delta_time = Clock().now() - self.detcet_fire_time
-                print(
+                self.get_logger().info(
                     f"[Info] Detect Fire! in {delta_time.nanoseconds/1e9:.2f} seconds"
                 )
+
 
                 if delta_time > Duration(seconds=alert_waiting_time):
 

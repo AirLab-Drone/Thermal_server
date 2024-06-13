@@ -120,6 +120,7 @@ class Thermal_DS4025FT():
             response = requests.get(url, headers=header, stream=True)
             if response.status_code == 200:
                 self.heat_map = io.BytesIO(response.raw.read())
+                # print(type(self.heat_map))
             else:
                 raise ValueError("Failed to get heat map.")
             
@@ -141,8 +142,6 @@ class Thermal_DS4025FT():
         max_temp_position = [max_temp_position[1], max_temp_position[0]] # [x, y]
         
         return max_temp, max_temp_position
-            
-        
         
     def getThermalStream(self, channel: int = 2, subtype: int = 0) -> cv2.VideoCapture|bool:
         """

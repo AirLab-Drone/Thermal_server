@@ -30,30 +30,14 @@ def generate_launch_description():
                         "launch/thermal_ipt430m.launch.py",
                     ),
                 ),
-                launch_arguments={
-                    'namespace': 'thermal_IPT430M',
-                }.items(),
             ),
-            # Launch the node with the specified parameters
-            TimerAction(
-                period=3.0,
-                actions=[
-                    Node(
-                        package="thermal_camera2world",
-                        executable="thermal_camera2world.py",
-                        namespace="thermal_IPT430M",
-                        name="thermal_camera_to_world",
-                        parameters=[LaunchConfiguration("thermal_camera_params_file")],
-                    )
-                ],
+            IncludeLaunchDescription(
+                PythonLaunchDescriptionSource(
+                    os.path.join(
+                        get_package_share_directory("thermal_ds4025ft"),
+                        "launch/thermal_ds4025ft.launch.py",
+                    ),
+                ),
             ),
-
-            # DS4025FT
-            # Node(
-            #     package="thermal_ds4025ft",
-            #     executable="DS4025FT_ros2_node.py",
-            #     name="DS4025FT_ros2_node",
-            #     namespace="thermal_DS4025FT",
-            # ),
         ]
     )

@@ -40,7 +40,7 @@ class DS4025FT_ros2_node(Node):
 
 
         self.publish_temperature_pos = self.create_timer(1, self.pos_temp_callback)
-        self.publish_image = self.create_timer(0.0001, self.image_callback)
+        self.publish_image = self.create_timer(0.001, self.image_callback)
 
 
     def pos_temp_callback(self):
@@ -69,7 +69,7 @@ class DS4025FT_ros2_node(Node):
         if ret:
             # frame = cv2.resize(frame, (640, 480))
             img_msg = self.bridge.cv2_to_imgmsg(frame, "bgr8")
-            self.get_logger().info('Publishing: Thermal Image')
+            # self.get_logger().info('Publishing: Thermal Image')
             self.image_pub.publish(img_msg)
         else:
             print('[Error] Failed to read frame from camera')

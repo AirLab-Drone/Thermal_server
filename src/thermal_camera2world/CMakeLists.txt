@@ -34,6 +34,7 @@ ament_python_install_package(${PROJECT_NAME})
 
 install(PROGRAMS
   scripts/thermal_camera2world.py
+  scripts/compare_theramlAlert.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
