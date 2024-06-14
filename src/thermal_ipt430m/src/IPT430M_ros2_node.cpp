@@ -168,13 +168,13 @@ private:
             auto pixel_msg = std::make_unique<std_msgs::msg::Int32MultiArray>();
             pixel_msg->data = {HotSpot_x, HotSpot_y};
             pixel_pub_->publish(std::move(pixel_msg));
-            RCLCPP_INFO(this->get_logger(), "Published pixel values: [%d, %d]", HotSpot_x, HotSpot_y);
+            // RCLCPP_INFO(this->get_logger(), "Published pixel values: [%d, %d]", HotSpot_x, HotSpot_y);
 
             // Publish temperature
             auto temperature_msg = std::make_unique<std_msgs::msg::Float32>();
             temperature_msg->data = max_temperature_;
             temperature_pub_->publish(std::move(temperature_msg));
-            RCLCPP_INFO(this->get_logger(), "Published max temperature: %f", max_temperature_);
+            // RCLCPP_INFO(this->get_logger(), "Published max temperature: %f", max_temperature_);
 
 
             if (thermal_data.Thermal_RGB_Image != nullptr)
