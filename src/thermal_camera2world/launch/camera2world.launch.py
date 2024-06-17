@@ -43,17 +43,9 @@ def generate_launch_description():
                         executable="thermal_camera2world.py",
                         namespace="thermal_IPT430M",
                         name="thermal_camera_to_world",
-                        parameters=[LaunchConfiguration("thermal_camera_params_file")],
+                        parameters=[thermal_camera_params_file],
                     )
                 ],
             ),
-
-            # DS4025FT
-            # Node(
-            #     package="thermal_ds4025ft",
-            #     executable="DS4025FT_ros2_node.py",
-            #     name="DS4025FT_ros2_node",
-            #     namespace="thermal_DS4025FT",
-            # ),
         ]
     )

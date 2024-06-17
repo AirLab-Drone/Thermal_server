@@ -43,13 +43,16 @@ class Thermal_camera_to_world(Node):
         super().__init__("thermal_camera_to_world")
 
         # -------------------------------- Parameters -------------------------------- #
-        # This parameter is used to set the four coner points of the world coordinate
+        # This parameter is used to set the four corner points of the world coordinate
         self.declare_parameter("World_UpperLeft", [0.0, 21.0])
         self.declare_parameter("World_UpperRight", [29.7, 21.0])
         self.declare_parameter("World_LowerRight", [29.7, 0.0])
         self.declare_parameter("World_LowerLeft", [0.0, 0.0])
         self.declare_parameter("Threshold_Temperature", 80.0)
         self.declare_parameter("Alert_Waiting_Time", 5)
+
+        self.get_logger().info(f'Threshold_Temperature: {self.get_parameter("Threshold_Temperature").get_parameter_value().double_value}')
+
 
         # ------------- Republish World Coordinate and Hot Spot Temperature ------------ #
         self.pub_thermal_alert = self.create_publisher(

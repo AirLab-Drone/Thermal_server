@@ -8,21 +8,8 @@ from ament_index_python import get_package_share_directory
 
 
 def generate_launch_description():
-    # # Get the path to the YAML file
-    # thermal_camera_params_file = os.path.join(
-    #     get_package_share_directory("thermal_camera2world"),
-    #     "config",
-    #     "camera2world.yaml",
-    # )
-
     return LaunchDescription(
         [
-            # # Declare the path to the YAML file as a launch argument
-            # DeclareLaunchArgument(
-            #     "thermal_camera_params_file",
-            #     default_value=thermal_camera_params_file,
-            #     description="Path to the YAML file with thermal camera parameters",
-            # ),
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(
                     os.path.join(
@@ -40,11 +27,11 @@ def generate_launch_description():
                 ),
             ),
             Node(
-                package='thermal_camera2world',
-                executable='compare_thermalAlert.py',
-                name='compare_thermalAlert',
-                output='screen',
-                namespace='compare_thermalAlert',
+                package="thermal_camera2world",
+                executable="compare_thermalAlert.py",
+                name="compare_thermalAlert",
+                output="screen",
+                namespace="compare_thermalAlert",
             ),
         ]
     )
