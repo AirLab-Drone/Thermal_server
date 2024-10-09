@@ -36,10 +36,11 @@ def get_prearm_status():
                 
             message = master.recv_match(type='SERVO_OUTPUT_RAW', blocking=True, timeout=5)
             if message:
-                for i in range(8):  # 通常有 8 個通道
+                for i in range(6):  # 6個馬達
                     output = getattr(message, f'servo{i+1}_raw', None)
                     if output is not None:
-                        print(f"Motor {i + 1} output: {output} us")    # output 是 PWM 脈衝寬度 (us) 1000-2000
+                        # print(f"Motor {i + 1} output: {output} us")    # output 是 PWM 脈衝寬度 (us) 1000-2000
+                        pass
             else:
                 print("No motor status message received.")
 
