@@ -50,15 +50,38 @@ def get_prearm_status():
                 print("姿態：")
                 print(f"Attitude: Pitch={pitch_deg:.2f}, Roll={roll_deg:.2f}, Yaw={yaw_deg:.2f}\n")
                 
+            # 馬達輸出
             message = master.recv_match(type='SERVO_OUTPUT_RAW', blocking=True, timeout=5)
             if message:
-                for i in range(6):  # 6個馬達
-                    output = getattr(message, f'servo{i+1}_raw', None)
-                    if output is not None:
-                        # print(f"Motor {i + 1} output: {output} us")    # output PPM調變如下：1000微秒：0%，2000微秒：100%
-                        pass
-            else:
-                print("No motor status message received.")
+                # PPM調變如下：1000微秒：0%，2000微秒：100%
+                print("馬達：")
+                print(f"Motor 1 output: {message.servo1_raw} us")
+                print(f"Motor 2 output: {message.servo2_raw} us")
+                print(f"Motor 3 output: {message.servo3_raw} us")
+                print(f"Motor 4 output: {message.servo4_raw} us")
+                print(f"Motor 5 output: {message.servo5_raw} us")
+                print(f"Motor 6 output: {message.servo6_raw} us")
+                print("\n")
+
+            # 檢查系統狀態
+            sys_status = master.recv_match(type='SYS_STATUS', blocking=True, timeout=wait_time)
+            if sys_status:
+                print("Checking sensors status...")
+                if sys_status.onboard_control_sensors_health & mavutil.mavlink.MAV_SYS_STATUS_SENSOR_3D_GYRO:
+                    print("3D Gyroscope is healthy")
+                if sys_status.onboard_control_sensors_health & mavutil.mavlink.MAV_SYS_STATUS_SENSOR_GPS:
+                    print("GPS is healthy")
+            # 檢查 GPS 狀態
+            gps_status = master.recv_match(type='GPS_RAW_INT', blocking=True, timeout=wait_time)
+            if gps_status:
+                print(f"GPS fix type: {gps_status.fix_type}, Satellites visible: {gps_status.satellites_visible}")
+                if gps_status.fix_type >= 3:
+                    print("GPS lock acquired")
+
+            # 顯示任何狀態提示
+            status_text = master.recv_match(type='STATUSTEXT', blocking=True, timeout=wait_time)
+            if status_text:
+                print(f"Status message: {status_text.text}")
 
         except Exception as e:
             print(f"Error receiving sensor data: {e}")
