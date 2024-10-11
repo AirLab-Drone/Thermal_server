@@ -1,3 +1,15 @@
+'''
+確認無線電的usb port
+ls /dev/ttyUSB*
+
+給權限
+sudo chmod 777 /dev/ttyUSB0
+
+
+'''
+
+
+
 from pymavlink import mavutil
 import math
 
@@ -11,17 +23,20 @@ def get_prearm_status():
 
     # 等待飛行器心跳包
     master.wait_heartbeat()
-    print("Heartbeat received. Connected to the vehicle.")
+    print("Heartbeat from system (system %u component %u)" % (master.target_system, master.target_component))
+    
 
     while True:
         # 獲取感測器的數據，這些數據可以來自不同的 MAVLink 消息
         try:
             # 獲取電池電壓和電流
-            battery_status = master.recv_match(type='SYS_STATUS', blocking=True, timeout=wait_time)
+            battery_status = master.recv_match(type='BATTERY_STATUS', blocking=True, timeout=wait_time)
             if battery_status:
-                voltage_battery = battery_status.voltage_battery / 1000.0  # 轉換為伏特
-                current_battery = battery_status.current_battery / 100.0   # 轉換為安培
-                print(f"Battery Voltage: {voltage_battery}V, Battery Current: {current_battery}A")
+                voltage_battery = battery_status.voltages[0] / 1000.0
+                current_battery = battery_status.current_battery / 100.0
+                battery_remaining = battery_status.battery_remaining
+                print("電池：")
+                print(f"電池電壓: {voltage_battery}V, 電池電流: {current_battery}A, 剩餘電量: {battery_remaining}%\n")
             
             # 獲取 ATTITUDE（姿態）數據
             attitude = master.recv_match(type='ATTITUDE', blocking=True, timeout=wait_time)
@@ -32,14 +47,15 @@ def get_prearm_status():
                 pitch_deg = math.degrees(pitch)
                 roll_deg = math.degrees(roll)
                 yaw_deg = math.degrees(yaw)
-                print(f"Attitude: Pitch={pitch_deg:.2f}, Roll={roll_deg:.2f}, Yaw={yaw_deg:.2f}")
+                print("姿態：")
+                print(f"Attitude: Pitch={pitch_deg:.2f}, Roll={roll_deg:.2f}, Yaw={yaw_deg:.2f}\n")
                 
             message = master.recv_match(type='SERVO_OUTPUT_RAW', blocking=True, timeout=5)
             if message:
                 for i in range(6):  # 6個馬達
                     output = getattr(message, f'servo{i+1}_raw', None)
                     if output is not None:
-                        # print(f"Motor {i + 1} output: {output} us")    # output 是 PWM 脈衝寬度 (us) 1000-2000
+                        # print(f"Motor {i + 1} output: {output} us")    # output PPM調變如下：1000微秒：0%，2000微秒：100%
                         pass
             else:
                 print("No motor status message received.")
@@ -57,6 +73,30 @@ def get_mavlink_messages():
         if msg_name.startswith("MAVLINK_MSG_ID"):
             print(msg_name)
 
+    print("-----------------")
+
+
+
+def get_battery_state():
+    master = mavutil.mavlink_connection('/dev/ttyUSB0', baud=57600)
+
+    # 等待飛行器心跳包
+    master.wait_heartbeat()
+    print("Heartbeat from system (system %u component %u)" % (master.target_system, master.target_component))
+
+    try:
+        # 獲取電池電壓和電流
+        battery_status = master.recv_match(type='BATTERY_STATUS', blocking=True, timeout=wait_time)
+        if battery_status:
+            voltage_battery = battery_status.voltages[0] / 1000.0
+            current_battery = battery_status.current_battery / 100.0
+            battery_remaining = battery_status.battery_remaining
+            print(f"電池電壓: {voltage_battery}V, 電池電流: {current_battery}A, 剩餘電量: {battery_remaining}%")
+
+            # print(f"Battery Voltage: {voltage_battery}V, Battery Current: {current_battery}A")
+
+    except Exception as e:
+        print(f"Error receiving sensor data: {e}")
 
 if __name__ == "__main__":
     try:
