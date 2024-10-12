@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Update Battery Status</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Update Battery Status</h1>
+        
+        <form action="/update/{{ status.id }}" method="POST" class="status-form">
+            <input type="text" name="battery_remaining" placeholder="Battery Remaining (%)" value="{{ status.battery_remaining }}" required>
+            <input type="text" name="voltage" placeholder="Voltage (V)" value="{{ status.voltage }}" required>
+            <input type="text" name="current" placeholder="Current (A)" value="{{ status.current }}" required>
+            <button type="submit">Update Status</button>
+        </form>
+    </div>
+</body>
+</html>

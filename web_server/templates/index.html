@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Battery Status</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
+</head>
+<body>
+    <div class="container">
+        <h1>Battery Status Dashboard</h1>
+        
+        <form action="/" method="POST" class="status-form">
+            <input type="text" name="battery_remaining" placeholder="Battery Remaining (%)" required>
+            <input type="text" name="voltage" placeholder="Voltage (V)" required>
+            <input type="text" name="current" placeholder="Current (A)" required>
+            <button type="submit">Add Status</button>
+        </form>
+        
+        <div class="status-list">
+            <h2>Current Statuses</h2>
+            <ul>
+                {% for status in statuses %}
+                <li>
+                    <strong>ID:</strong> {{ status.id }} | 
+                    <strong>Time:</strong> {{ status.timestamp }} | 
+                    <strong>Battery Remaining:</strong> {{ status.battery_remaining }}% | 
+                    <strong>Voltage:</strong> {{ status.voltage }}V | 
+                    <strong>Current:</strong> {{ status.current }}A
+                    <a href="/update/{{ status.id }}" class="update-btn">Update</a>
+                    <a href="/delete/{{ status.id }}" class="delete-btn">Delete</a>
+                </li>
+                {% endfor %}
+            </ul>
+        </div>
+    </div>
+    <!-- <script>
+        // 判斷是否剛剛更新了資料庫，如果是，則刷新頁面
+        document.addEventListener("DOMContentLoaded", function() {
+            const urlParams = new URLSearchParams(window.location.search);
+            if (urlParams.get('updated') === 'true') {
+                // 刷新頁面，但去除 updated 參數
+                window.location.href = window.location.pathname;
+            }
+        });
+    </script> -->
+</body>
+</html>
