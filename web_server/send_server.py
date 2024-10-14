@@ -5,8 +5,8 @@ def send_data_to_server():
     url = 'http://127.0.0.1:5000/'  # 替換為您的 Flask 伺服器的 URL
     headers = {'Content-Type': 'application/json'}
     data = {
-        'battery_remaining': 100.0,
-        'voltage': 11.33,
+        'battery_remaining': 56.0,
+        'voltage': 18,
         'current': 3.3
     }
 

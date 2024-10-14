@@ -9,7 +9,7 @@ body {
 
 .container {
     width: 80%;
-    max-width: 1200px;
+    max-width: 1500px;
     margin: 50px auto;
     background: #ffffff;
     padding: 20px;
@@ -67,7 +67,7 @@ h1, h2 {
     align-items: center;
 }
 
-.update-btn, .delete-btn {
+.update-btn, .delete-btn ,.refresh-btn{
     text-decoration: none;
     color: #fff;
     background-color: #28a745;

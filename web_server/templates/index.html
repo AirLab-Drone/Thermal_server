@@ -3,12 +3,12 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Battery Status</title>
+    <title>Drone Status</title>
     <link rel="stylesheet" href="{{ url_for('static', filename='styles.css') }}">
 </head>
 <body>
     <div class="container">
-        <h1>Battery Status Dashboard</h1>
+        <h1>Drone Status Dashboard</h1>
         
         <form action="/" method="POST" class="status-form">
             <input type="text" name="battery_remaining" placeholder="Battery Remaining (%)" required>
@@ -16,9 +16,10 @@
             <input type="text" name="current" placeholder="Current (A)" required>
             <button type="submit">Add Status</button>
         </form>
+        <button onclick="window.location.reload();" class="refresh-btn">Refresh Page</button>
         
         <div class="status-list">
-            <h2>Current Statuses</h2>
+            <h2>Drone Statuses</h2>
             <ul>
                 {% for status in statuses %}
                 <li>
@@ -33,6 +34,7 @@
                 {% endfor %}
             </ul>
         </div>
+        
     </div>
     <!-- <script>
         // 判斷是否剛剛更新了資料庫，如果是，則刷新頁面
