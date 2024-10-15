@@ -57,7 +57,8 @@ def index():
     
     else:
         updated = request.args.get('updated', 'false')
-        statuses = Drone_Status.query.order_by(Drone_Status.id).all()
+
+        statuses = Drone_Status.query.order_by(Drone_Status.id.desc()).all()
         return render_template('index.html', statuses=statuses, updated=updated)
 
 # 刪除電池狀態的路由
