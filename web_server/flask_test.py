@@ -19,9 +19,9 @@ class Drone_Status(db.Model):
     battery_remaining = db.Column(db.Float, nullable=False)
     voltage = db.Column(db.Float, nullable=False)
     current = db.Column(db.Float, nullable=False)
-    imu_status = db.Column(db.Boolean, nullable=False)
-    imu_data = db.Column(db.Float, nullable=False)
-    compass_status = db.Column(db.Boolean, nullable=False)
+    # imu_status = db.Column(db.Boolean, nullable=False)
+    # imu_data = db.Column(db.Float, nullable=False)
+    # compass_status = db.Column(db.Boolean, nullable=False)
 
 
 

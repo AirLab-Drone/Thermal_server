@@ -9,82 +9,88 @@ sudo chmod 777 /dev/ttyUSB0
 '''
 
 
-
 from pymavlink import mavutil
 import math
+import time
+
+from utils import tools
 
 
-wait_time = 5  # 等待時間（秒）
+
+# 設定串口和波特率
+master = mavutil.mavlink_connection('/dev/ttyUSB0', baud=57600)
+
+# 等待心跳包確認連接成功
+print("等待飛控心跳包...")
+master.wait_heartbeat()
+print(f"已連接到系統 {master.target_system}, 組件 {master.target_component}")
+
+
+def get_system_info():
+    # 獲取系統信息
+    system_info = master.mav.srcSystem
+    print(f"系統信息: {system_info}")
+
+    # 獲取組件信息
+    component_info = master.mav.srcComponent
+    print(f"組件信息: {component_info}")
+
+    # 獲取飛控版本信息
+    version_info = master.mav.version
+    print(f"飛控版本信息: {version_info}")
+
+
+
+
+
+
+def mavlink_recive_test():
+    while True:
+        try:
+            # 嘗試接收任何消息
+            message = master.recv_match(blocking=False, timeout=10)
+            if message:
+                print(f"Received message: {message.get_type()} - {message}")
+            else:
+                print("未接收到任何消息...")
+            time.sleep(1)  # 稍作延遲避免過度輸出
+        except Exception as e:
+            print(f"錯誤: {e}")
 
 
 def get_prearm_status():
-    # 連接到 ArduPilot，這裡假設是通過 USB 串口（可以根據實際情況修改端口）
-    master = mavutil.mavlink_connection('/dev/ttyUSB0', baud=57600)
-
-    # 等待飛行器心跳包
-    master.wait_heartbeat()
-    print("Heartbeat from system (system %u component %u)" % (master.target_system, master.target_component))
-    
-
+    """獲取飛控的主要狀態信息"""
     while True:
-        # 獲取感測器的數據，這些數據可以來自不同的 MAVLink 消息
         try:
-            # 獲取電池電壓和電流
-            battery_status = master.recv_match(type='BATTERY_STATUS', blocking=True, timeout=wait_time)
+            # 獲取電池狀態
+            battery_status = master.recv_match(type='BATTERY_STATUS', blocking=True, timeout=5)
             if battery_status:
-                voltage_battery = battery_status.voltages[0] / 1000.0
-                current_battery = battery_status.current_battery / 100.0
-                battery_remaining = battery_status.battery_remaining
-                print("電池：")
-                print(f"電池電壓: {voltage_battery}V, 電池電流: {current_battery}A, 剩餘電量: {battery_remaining}%\n")
-            
-            # 獲取 ATTITUDE（姿態）數據
-            attitude = master.recv_match(type='ATTITUDE', blocking=True, timeout=wait_time)
+                voltage_battery = battery_status.voltages[0] / 1000.0  # 轉換成伏特
+                current_battery = battery_status.current_battery / 100.0  # 轉換成安培
+                battery_remaining = battery_status.battery_remaining  # 剩餘百分比
+                print(f"電池電壓: {voltage_battery}V, 電池電流: {current_battery}A, 剩餘電量: {battery_remaining}%")
+
+            # 獲取姿態信息
+            attitude = master.recv_match(type='ATTITUDE', blocking=True, timeout=5)
             if attitude:
-                pitch = attitude.pitch
-                roll = attitude.roll
-                yaw = attitude.yaw
-                pitch_deg = math.degrees(pitch)
-                roll_deg = math.degrees(roll)
-                yaw_deg = math.degrees(yaw)
-                print("姿態：")
-                print(f"Attitude: Pitch={pitch_deg:.2f}, Roll={roll_deg:.2f}, Yaw={yaw_deg:.2f}\n")
-                
-            # 馬達輸出
-            message = master.recv_match(type='SERVO_OUTPUT_RAW', blocking=True, timeout=5)
-            if message:
-                # PPM調變如下：1000微秒：0%，2000微秒：100%
-                print("馬達：")
-                print(f"Motor 1 output: {message.servo1_raw} us")
-                print(f"Motor 2 output: {message.servo2_raw} us")
-                print(f"Motor 3 output: {message.servo3_raw} us")
-                print(f"Motor 4 output: {message.servo4_raw} us")
-                print(f"Motor 5 output: {message.servo5_raw} us")
-                print(f"Motor 6 output: {message.servo6_raw} us")
-                print("\n")
+                pitch = math.degrees(attitude.pitch)  # 轉換成角度
+                roll = math.degrees(attitude.roll)
+                yaw = math.degrees(attitude.yaw)
+                print(f"姿態 - Pitch: {pitch:.2f}, Roll: {roll:.2f}, Yaw: {yaw:.2f}")
 
-            # 檢查系統狀態
-            sys_status = master.recv_match(type='SYS_STATUS', blocking=True, timeout=wait_time)
-            if sys_status:
-                print("Checking sensors status...")
-                if sys_status.onboard_control_sensors_health & mavutil.mavlink.MAV_SYS_STATUS_SENSOR_3D_GYRO:
-                    print("3D Gyroscope is healthy")
-                if sys_status.onboard_control_sensors_health & mavutil.mavlink.MAV_SYS_STATUS_SENSOR_GPS:
-                    print("GPS is healthy")
-            # 檢查 GPS 狀態
-            gps_status = master.recv_match(type='GPS_RAW_INT', blocking=True, timeout=wait_time)
+            # 獲取 GPS 狀態
+            gps_status = master.recv_match(type='GPS_RAW_INT', blocking=True, timeout=5)
             if gps_status:
-                print(f"GPS fix type: {gps_status.fix_type}, Satellites visible: {gps_status.satellites_visible}")
-                if gps_status.fix_type >= 3:
-                    print("GPS lock acquired")
+                print(f"GPS 固定類型: {gps_status.fix_type}, 可見衛星數: {gps_status.satellites_visible}")
 
-            # 顯示任何狀態提示
-            status_text = master.recv_match(type='STATUSTEXT', blocking=True, timeout=wait_time)
-            if status_text:
-                print(f"Status message: {status_text.text}")
+            # 獲取飛控狀態提示
+            statustext = master.recv_match(type='STATUSTEXT', blocking=True, timeout=5)
+            if statustext:
+                print(f"狀態消息: {statustext.text}")
 
         except Exception as e:
-            print(f"Error receiving sensor data: {e}")
+            print(f"錯誤: {e}")
+        time.sleep(1)
 
 
 
@@ -123,6 +129,6 @@ def get_battery_state():
 
 if __name__ == "__main__":
     try:
-        get_prearm_status()
+        get_system_info()
     except KeyboardInterrupt:
-        print("Monitoring stopped by user.")
+        print("終止監控")
