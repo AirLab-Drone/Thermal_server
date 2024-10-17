@@ -1,3 +1,12 @@
+'''
+確認無線電的usb port
+ls /dev/ttyUSB*
+
+給權限
+sudo chmod 777 /dev/ttyUSB0
+
+'''
+
 from pymavlink import mavutil
 import time
 
@@ -61,12 +70,15 @@ class MAVLinkHandler:
 
                 print("sensors_health")
                 tools.parse_sensor_health(sensors_health)
+                print("=============================================================================\n")
 
                 print("sensors_enabled")
                 tools.parse_sensor_health(sensors_enabled)
+                print("=============================================================================\n")
 
                 print("sensors_present")
                 tools.parse_sensor_health(sensors_present)
+                print("=============================================================================\n")
 
                 # print(f"感測器健康狀態: {sensors_health}, 剩餘電池: {battery_remaining}%")
             else:
