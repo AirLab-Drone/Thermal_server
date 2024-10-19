@@ -60,18 +60,18 @@ colcon build
 | 第二 3D 陀螺儀 (3D_GYRO2)    | 0                            | 0                          | 0                          | 131072      | 0x20000 2nd 3D gyro                      |
 | 第二 3D 加速度計 (3D_ACCEL2) | 0                            | 0                          | 0                          | 262144      | 0x40000 2nd 3D accelerometer             |
 | 第二 3D 磁力計 (3D_MAG2)     | 0                            | 0                          | 0                          | 524288      | 0x80000 2nd 3D magnetometer              |
-| 地理圍欄 (MAV_SYS_STATUS_GEOFENCE)                 | 1                            | 0                          | 1                          | 1048576     | 0x100000 geofence                        |
-| AHRS（姿態與航向參考系統） (MAV_SYS_STATUS_AHRS)   | 1                            | 1                          | 1                          | 2097152     | 0x200000 AHRS subsystem health           |
-| 地形 (MAV_SYS_STATUS_TERRAIN)                      | 1                            | 1                          | 1                          | 4194304     | 0x400000 Terrain subsystem health        |
-| 反向馬達 (MAV_SYS_STATUS_REVERSE_MOTOR)            | 0                            | 0                          | 0                          | 8388608     | 0x800000 Motors are reversed             |
-| 日誌記錄 (MAV_SYS_STATUS_LOGGING)                  | 1                            | 0                          | 1                          | 16777216    | 0x1000000 Logging                        |
+| 地理圍欄 (GEOFENCE)                 | 1                            | 0                          | 1                          | 1048576     | 0x100000 geofence                        |
+| AHRS（姿態與航向參考系統） (AHRS)   | 1                            | 1                          | 1                          | 2097152     | 0x200000 AHRS subsystem health           |
+| 地形 (TERRAIN)                      | 1                            | 1                          | 1                          | 4194304     | 0x400000 Terrain subsystem health        |
+| 反向馬達 (REVERSE_MOTOR)            | 0                            | 0                          | 0                          | 8388608     | 0x800000 Motors are reversed             |
+| 日誌記錄 (LOGGING)                  | 1                            | 0                          | 1                          | 16777216    | 0x1000000 Logging                        |
 | 電池 (BATTERY)               | 1                            | 1                          | 1                          | 33554432    | 0x2000000 Battery                        |
 | 接近感測 (PROXIMITY)        | 0                            | 0                          | 1                          | 67108864    | 0x4000000 Proximity                      |
 | 衛星通信 (SATCOM)            | 0                            | 0                          | 0                          | 134217728   | 0x8000000 Satellite Communication        |
-| 起飛前檢查 (MAV_SYS_STATUS_PREARM_CHECK)           | 1                            | 1                          | 1                          | 268435456   | 0x10000000 Pre-arm check status          |
-| 障礙避免 (MAV_SYS_STATUS_OBSTACLE_AVOIDANCE)      | 0                            | 0                          | 0                          | 536870912   | 0x20000000 Avoidance/collision prevention|
+| 起飛前檢查 (PREARM_CHECK)           | 1                            | 1                          | 1                          | 268435456   | 0x10000000 Pre-arm check status          |
+| 障礙避免 (OBSTACLE_AVOIDANCE)      | 0                            | 0                          | 0                          | 536870912   | 0x20000000 Avoidance/collision prevention|
 | 推進系統 (PROPULSION)       | 1                            | 1                          | 1                          | 1073741824  | 0x40000000 Propulsion                    |
-| 擴展位元字段已使用 (MAV_SYS_STATUS_EXTENSION_USED) | 0                            | 0                          | 0                          | 2147483648  | 0x80000000 Extended bit-field used       |
+| 擴展位元字段已使用 (EXTENSION_USED) | 0                            | 0                          | 0                          | 2147483648  | 0x80000000 Extended bit-field used       |
 
 
 
