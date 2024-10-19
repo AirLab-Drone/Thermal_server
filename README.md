@@ -38,40 +38,40 @@ colcon build
 ## 目前要檢查的項目：
 ## 無人機
 ### 無人機上的感測器  
-| 感測器/控制項                                     | Value       | Description                              | 存在狀態 (`present`) | 啟用狀態 (`enabled`) | 健康狀態 (`health`) |
-|:---------------------------------------------------|:-------------|:------------------------------------------|:------------------------------|:----------------------------|:----------------------------|
-| 3D 陀螺儀 (3D_GYRO)          | 1           | 0x01 3D gyro                             | 1                            | 1                          | 1                          |
-| 3D 加速度計 (3D_ACCEL)       | 2           | 0x02 3D accelerometer                    | 1                            | 1                          | 1                          |
-| 3D 磁力計 (3D_MAG)           | 4           | 0x04 3D magnetometer                     | 1                            | 1                          | 1                          |
-| 絶對壓力 (ABSOLUTE_PRESSURE) | 8           | 0x08 absolute pressure                   | 1                            | 1                          | 1                          |
-| 差壓計 (DIFFERENTIAL_PRESSURE) | 16         | 0x10 differential pressure               | 0                            | 0                          | 0                          |
-| GPS (GPS)                    | 32          | 0x20 GPS                                 | 1                            | 1                          | 1                          |
-| 光流 (OPTICAL_FLOW)          | 64          | 0x40 optical flow                        | 1                            | 1                          | 1                          |
-| 視覺定位 (VISION_POSITION)   | 128         | 0x80 computer vision position            | 0                            | 0                          | 0                          |
-| 雷射定位 (LASER_POSITION)    | 256         | 0x100 laser based position               | 1                            | 1                          | 1                          |
-| 外部地面真值 (EXTERNAL_GROUND_TRUTH) | 512     | 0x200 external ground truth             | 0                            | 0                          | 0                          |
-| 3D 角速度控制 (ANGULAR_RATE_CONTROL) | 1024   | 0x400 3D angular rate control           | 1                            | 1                          | 1                          |
-| 姿態穩定 (ATTITUDE_STABILIZATION) | 2048      | 0x800 attitude stabilization            | 1                            | 1                          | 1                          |
-| 偏航位置 (YAW_POSITION)      | 4096        | 0x1000 yaw position                      | 1                            | 1                          | 1                          |
-| Z 軸/高度控制 (Z_ALTITUDE_CONTROL) | 8192     | 0x2000 z/altitude control               | 1                            | 1                          | 1                          |
-| X/Y 軸位置控制 (XY_POSITION_CONTROL) | 16384   | 0x4000 x/y position control             | 1                            | 1                          | 1                          |
-| 馬達輸出 (MOTOR_OUTPUTS)    | 32768       | 0x8000 motor outputs / control           | 1                            | 1                          | 1                          |
-| RC 接收器 (RC_RECEIVER)      | 65536       | 0x10000 RC receiver                      | 1                            | 1                          | 1                          |
-| 第二 3D 陀螺儀 (3D_GYRO2)    | 131072      | 0x20000 2nd 3D gyro                      | 0                            | 0                          | 0                          |
-| 第二 3D 加速度計 (3D_ACCEL2) | 262144      | 0x40000 2nd 3D accelerometer             | 0                            | 0                          | 0                          |
-| 第二 3D 磁力計 (3D_MAG2)     | 524288      | 0x80000 2nd 3D magnetometer              | 0                            | 0                          | 0                          |
-| 地理圍欄 (MAV_SYS_STATUS_GEOFENCE)                 | 1048576     | 0x100000 geofence                        | 1                            | 0                          | 1                          |
-| AHRS（姿態與航向參考系統） (MAV_SYS_STATUS_AHRS)   | 2097152     | 0x200000 AHRS subsystem health           | 1                            | 1                          | 1                          |
-| 地形 (MAV_SYS_STATUS_TERRAIN)                      | 4194304     | 0x400000 Terrain subsystem health        | 1                            | 1                          | 1                          |
-| 反向馬達 (MAV_SYS_STATUS_REVERSE_MOTOR)            | 8388608     | 0x800000 Motors are reversed             | 0                            | 0                          | 0                          |
-| 日誌記錄 (MAV_SYS_STATUS_LOGGING)                  | 16777216    | 0x1000000 Logging                        | 1                            | 0                          | 1                          |
-| 電池 (BATTERY)               | 33554432    | 0x2000000 Battery                        | 1                            | 1                          | 1                          |
-| 接近感測 (PROXIMITY)        | 67108864    | 0x4000000 Proximity                      | 0                            | 0                          | 1                          |
-| 衛星通信 (SATCOM)            | 134217728   | 0x8000000 Satellite Communication        | 0                            | 0                          | 0                          |
-| 起飛前檢查 (MAV_SYS_STATUS_PREARM_CHECK)           | 268435456   | 0x10000000 Pre-arm check status          | 1                            | 1                          | 1                          |
-| 障礙避免 (MAV_SYS_STATUS_OBSTACLE_AVOIDANCE)      | 536870912   | 0x20000000 Avoidance/collision prevention| 0                            | 0                          | 0                          |
-| 推進系統 (PROPULSION)       | 1073741824  | 0x40000000 Propulsion                    | 1                            | 1                          | 1                          |
-| 擴展位元字段已使用 (MAV_SYS_STATUS_EXTENSION_USED) | 2147483648  | 0x80000000 Extended bit-field used       | 0                            | 0                          | 0                          |
+| 感測器/控制項                                     | 存在狀態 (`present`) | 啟用狀態 (`enabled`) | 健康狀態 (`health`) | Value       | Description                              |
+|:---------------------------------------------------|:------------------------------|:----------------------------|:----------------------------|:-------------|:------------------------------------------|
+| 3D 陀螺儀 (3D_GYRO)          | 1                            | 1                          | 1                          | 1           | 0x01 3D gyro                             |
+| 3D 加速度計 (3D_ACCEL)       | 1                            | 1                          | 1                          | 2           | 0x02 3D accelerometer                    |
+| 3D 磁力計 (3D_MAG)           | 1                            | 1                          | 1                          | 4           | 0x04 3D magnetometer                     |
+| 絶對壓力 (ABSOLUTE_PRESSURE) | 1                            | 1                          | 1                          | 8           | 0x08 absolute pressure                   |
+| 差壓計 (DIFFERENTIAL_PRESSURE) | 0                            | 0                          | 0                          | 16         | 0x10 differential pressure               |
+| GPS (GPS)                    | 1                            | 1                          | 1                          | 32          | 0x20 GPS                                 |
+| 光流 (OPTICAL_FLOW)          | 1                            | 1                          | 1                          | 64          | 0x40 optical flow                        |
+| 視覺定位 (VISION_POSITION)   | 0                            | 0                          | 0                          | 128         | 0x80 computer vision position            |
+| 雷射定位 (LASER_POSITION)    | 1                            | 1                          | 1                          | 256         | 0x100 laser based position               |
+| 外部地面真值 (EXTERNAL_GROUND_TRUTH) | 0                            | 0                          | 0                          | 512     | 0x200 external ground truth             |
+| 3D 角速度控制 (ANGULAR_RATE_CONTROL) | 1                            | 1                          | 1                          | 1024   | 0x400 3D angular rate control           |
+| 姿態穩定 (ATTITUDE_STABILIZATION) | 1                            | 1                          | 1                          | 2048      | 0x800 attitude stabilization            |
+| 偏航位置 (YAW_POSITION)      | 1                            | 1                          | 1                          | 4096        | 0x1000 yaw position                      |
+| Z 軸/高度控制 (Z_ALTITUDE_CONTROL) | 1                            | 1                          | 1                          | 8192     | 0x2000 z/altitude control               |
+| X/Y 軸位置控制 (XY_POSITION_CONTROL) | 1                            | 1                          | 1                          | 16384   | 0x4000 x/y position control             |
+| 馬達輸出 (MOTOR_OUTPUTS)    | 1                            | 1                          | 1                          | 32768       | 0x8000 motor outputs / control           |
+| RC 接收器 (RC_RECEIVER)      | 1                            | 1                          | 1                          | 65536       | 0x10000 RC receiver                      |
+| 第二 3D 陀螺儀 (3D_GYRO2)    | 0                            | 0                          | 0                          | 131072      | 0x20000 2nd 3D gyro                      |
+| 第二 3D 加速度計 (3D_ACCEL2) | 0                            | 0                          | 0                          | 262144      | 0x40000 2nd 3D accelerometer             |
+| 第二 3D 磁力計 (3D_MAG2)     | 0                            | 0                          | 0                          | 524288      | 0x80000 2nd 3D magnetometer              |
+| 地理圍欄 (MAV_SYS_STATUS_GEOFENCE)                 | 1                            | 0                          | 1                          | 1048576     | 0x100000 geofence                        |
+| AHRS（姿態與航向參考系統） (MAV_SYS_STATUS_AHRS)   | 1                            | 1                          | 1                          | 2097152     | 0x200000 AHRS subsystem health           |
+| 地形 (MAV_SYS_STATUS_TERRAIN)                      | 1                            | 1                          | 1                          | 4194304     | 0x400000 Terrain subsystem health        |
+| 反向馬達 (MAV_SYS_STATUS_REVERSE_MOTOR)            | 0                            | 0                          | 0                          | 8388608     | 0x800000 Motors are reversed             |
+| 日誌記錄 (MAV_SYS_STATUS_LOGGING)                  | 1                            | 0                          | 1                          | 16777216    | 0x1000000 Logging                        |
+| 電池 (BATTERY)               | 1                            | 1                          | 1                          | 33554432    | 0x2000000 Battery                        |
+| 接近感測 (PROXIMITY)        | 0                            | 0                          | 1                          | 67108864    | 0x4000000 Proximity                      |
+| 衛星通信 (SATCOM)            | 0                            | 0                          | 0                          | 134217728   | 0x8000000 Satellite Communication        |
+| 起飛前檢查 (MAV_SYS_STATUS_PREARM_CHECK)           | 1                            | 1                          | 1                          | 268435456   | 0x10000000 Pre-arm check status          |
+| 障礙避免 (MAV_SYS_STATUS_OBSTACLE_AVOIDANCE)      | 0                            | 0                          | 0                          | 536870912   | 0x20000000 Avoidance/collision prevention|
+| 推進系統 (PROPULSION)       | 1                            | 1                          | 1                          | 1073741824  | 0x40000000 Propulsion                    |
+| 擴展位元字段已使用 (MAV_SYS_STATUS_EXTENSION_USED) | 0                            | 0                          | 0                          | 2147483648  | 0x80000000 Extended bit-field used       |
 
 
 
