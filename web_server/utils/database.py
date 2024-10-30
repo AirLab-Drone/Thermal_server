@@ -2,65 +2,35 @@ import pytz
 from flask_sqlalchemy import SQLAlchemy
 from datetime import datetime
 
-db = SQLAlchemy()
-
-# 定義資料庫模型
-
-class SensorGroup(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    group_name = db.Column(db.String(50), nullable=False)  # 感測器組名稱
-    timestamp = db.Column(db.DateTime, default=datetime.now(pytz.timezone('Asia/Taipei')))
-    sensors = db.relationship('SensorStatus', backref='group', lazy=True)
+database = SQLAlchemy()
 
 
-
-class SensorStatus(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    sensor_name = db.Column(db.String(50), nullable=False)  # 感測器名稱
-    sensor_value = db.Column(db.Boolean, nullable=False)  # 感測器值
-    group_id = db.Column(db.Integer, db.ForeignKey('sensor_group.id'), nullable=False)
-
-
-
-class Drone_Status(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    timestamp = db.Column(
-        db.DateTime, default=lambda: datetime.now(pytz.timezone("Asia/Taipei"))
+class Drone_Status(database.Model):
+    id = database.Column(database.Integer, primary_key=True)
+    date = database.Column(
+        database.Date, default=datetime.now(pytz.timezone("Asia/Taipei")).date()
     )
-    # 無人機 onboard_control_sensors_present
-    gyro = db.Column(db.Boolean, nullable=False)
-    accel = db.Column(db.Boolean, nullable=False)
-    mag = db.Column(db.Boolean, nullable=False)
-    abs_pressure = db.Column(db.Boolean, nullable=False)
-    diff_pressure = db.Column(db.Boolean, nullable=False)
-    gps = db.Column(db.Boolean, nullable=False)
-    optical_flow = db.Column(db.Boolean, nullable=False)
-    vision_position = db.Column(db.Boolean, nullable=False)
-    laser_position = db.Column(db.Boolean, nullable=False)
-    external_ground_truth = db.Column(db.Boolean, nullable=False)
-    angular_velocity_control = db.Column(db.Boolean, nullable=False)
-    attitude_stabilization = db.Column(db.Boolean, nullable=False)
-    yaw_position = db.Column(db.Boolean, nullable=False)
-    z_axis_height_control = db.Column(db.Boolean, nullable=False)
-    xy_position_control = db.Column(db.Boolean, nullable=False)
-    motor_output = db.Column(db.Boolean, nullable=False)
-    rc_receiver = db.Column(db.Boolean, nullable=False)
-    second_gyro = db.Column(db.Boolean, nullable=False)
-    second_accel = db.Column(db.Boolean, nullable=False)
-    second_mag = db.Column(db.Boolean, nullable=False)
-    geofence = db.Column(db.Boolean, nullable=False)
-    ahrs = db.Column(db.Boolean, nullable=False)
-    terrain = db.Column(db.Boolean, nullable=False)
-    reverse_motor = db.Column(db.Boolean, nullable=False)
-    logging = db.Column(db.Boolean, nullable=False)
-    battery = db.Column(db.Boolean, nullable=False)
-    proximity = db.Column(db.Boolean, nullable=False)
-    satellite_communication = db.Column(db.Boolean, nullable=False)
-    prearm_check = db.Column(db.Boolean, nullable=False)
-    obstacle_avoidance = db.Column(db.Boolean, nullable=False)
-    propulsion = db.Column(db.Boolean, nullable=False)
-    extended_bit_field = db.Column(db.Boolean, nullable=False)
+    time = database.Column(
+        database.Time,
+        default=lambda: datetime.now(pytz.timezone("Asia/Taipei"))
+        .time(),
+    )
 
+    sensor_health = database.Column(database.Integer, nullable=False)
+    battery_voltage = database.Column(database.Float, nullable=False)
+    battery_current = database.Column(database.Float, nullable=False)
+    battery_remaining = database.Column(database.Integer, nullable=False)
+    gps_hdop = database.Column(database.Float, nullable=False)
+    gps_satellites_visible = database.Column(database.Integer, nullable=False)
+    attitude_roll = database.Column(database.Float, nullable=False)
+    attitude_pitch = database.Column(database.Float, nullable=False)
+    attitude_yaw = database.Column(database.Float, nullable=False)
+    servo_output_1 = database.Column(database.Integer, nullable=False)
+    servo_output_2 = database.Column(database.Integer, nullable=False)
+    servo_output_3 = database.Column(database.Integer, nullable=False)
+    servo_output_4 = database.Column(database.Integer, nullable=False)
+    servo_output_5 = database.Column(database.Integer, nullable=False)
+    servo_output_6 = database.Column(database.Integer, nullable=False)
 
     def __repr__(self):
         return f"<Drone_Status {self.id}>"

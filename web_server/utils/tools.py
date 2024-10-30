@@ -80,12 +80,15 @@ def parse_sensor_health(sensors_health):
     print(f"系統感測器健康狀態: {sensors_health}")
     for flag, sensor in sensor_flags.items():
         if sensors_health & flag:
-            print(f"{sensor}: 啟用, {sensors_health & flag}")
+            print(f"{sensor}: True")
+            # print(f"{sensor}: True, {sensors_health & flag}")
         else:
-            print(f"{sensor}: 禁用, {sensors_health & flag}")
+            print(f"{sensor}: False")
+            # print(f"{sensor}: False, {sensors_health & flag}")
 
 
 if __name__ == "__main__":
-    sensors_health = 1196465487  # 你的 onboard_control_sensors_health 數值
+    # sensors_health = 1196465487  # 你的 onboard_control_sensors_health 數值
+    sensors_health = 2147483649  # 你的 onboard_control_sensors_health 數值
     parse_sensor_health(sensors_health)
 

@@ -67,7 +67,7 @@ h1, h2 {
     align-items: center;
 }
 
-.update-btn, .delete-btn ,.refresh-btn{
+.update-btn, .delete-btn, .refresh-btn {
     text-decoration: none;
     color: #fff;
     background-color: #28a745;
