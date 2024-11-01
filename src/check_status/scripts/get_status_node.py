@@ -11,6 +11,7 @@ sudo chmod 777 /dev/ttyUSB0
 import json
 import math
 import time
+import copy
 
 from pymavlink import mavutil
 
@@ -18,16 +19,32 @@ import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Float32
 
-from check_status_py.error_code import *
 
+from drone_status_msgs.srv import CheckUSBDevices
+
+from check_status_py.error_code import *
+from check_status_py.tools import send_json_to_server   
+
+
+'''
+# TODO:同時檢查是否有接上飛控跟電腦
+database 有三個table
+    1. 飛控狀態
+    2. up squared 狀態 (RGB, Thermal) 
+    3. 環境熱像儀狀態
+''' 
+
+
+# !寫兩個callback 用來檢查 up squared 和 FUC 是否有連接上
+# !一個callback 用來檢查飛控狀態
+# !一個callback 用來檢查USB狀態
 
 
 
 class Check_status(Node):
 
-    def __init__(self, port='/dev/ttyUSB0', baud=57600):
+    def __init__(self, port='/dev/ttyUSB0', baud=57600, interval_time=1):
         super().__init__('minimal_publisher')
-        self.__connect_mavlink(port, baud)
 
         self.drone_status_dict = {  
             "sensor_health": None,
@@ -45,23 +62,121 @@ class Check_status(Node):
             "servo_output_4": None,            # uint16_t      us       PWM 通常在 1000 到 2000 微秒之間
             "servo_output_5": None,            # uint16_t      us       PWM 通常在 1000 到 2000 微秒之間
             "servo_output_6": None,            # uint16_t      us       PWM 通常在 1000 到 2000 微秒之間
-            "error_code": None
+            "error_code": []
             }
+        
+        self.up_squared_status_dict = {
+            "rgb_status": None,
+            "thermal_status": None,
+            "error_code": []
+        }
+
+
+        timeout_warning_sent = False
+        # 初始化 USB 檢查服務
+        start_time = time.time()
+        self.cli = self.create_client(CheckUSBDevices, 'check_usb_devices')
+
+        # TODO: 若是啟動後失敗 要寫偵測機制
+        while not self.cli.wait_for_service(timeout_sec=1.0):
+            # 計算等待時間
+            elapsed_time = time.time() - start_time
+            self.get_logger().info(f'等待 USB 檢查服務啟動... 已等待 {elapsed_time:.0f} 秒')
+
+            # 當等待時間超過 10 秒且還未發送警告時，發送一次警告
+            if elapsed_time > 5 and not timeout_warning_sent:
+                self.get_logger().warn('等待 USB 檢查服務啟動超過 10 秒，發送警告至伺服器...')
+                
+                # 發送警告並且只增加一次錯誤代碼
+                up_squared_status_dict = copy.deepcopy(self.up_squared_status_dict)
+                up_squared_status_dict["error_code"].append(ERROR_CODE.UP_SQUARE_ERROR)
+                send_json_to_server(url="", data=up_squared_status_dict)
+                
+                timeout_warning_sent = True  # 標記已發送警告
+
+            # 如果已經發送過警告且再次嘗試重新連接，則重設計時器和警告狀態
+            if elapsed_time > 5:  # 假設每 15 秒重設一次計時器
+                start_time = time.time()
+                timeout_warning_sent = False  # 重置以便再次發送警告
+                
+
+        # 定期檢查 USB 狀態 interval_time 秒
+        self.create_timer(interval_time, self.check_usb_status)
+        
+
+
+
+
+
+        self.__connect_mavlink(port, baud)
+
+
+
+
         
         self.latest_status = None
 
         self.error_code_list = []
         
         # 秒取得一次
-        self.timer = self.create_timer(5, self.get_drone_status_callback)
+        self.timer = self.create_timer(interval_time, self.get_drone_status_callback)
 
 
 
-
+    # TODO: 若是啟動後失敗 要寫偵測機制
     def __connect_mavlink(self, port='/dev/ttyUSB0', baud=57600):
         self.master = mavutil.mavlink_connection(port, baud)
         if not self.__wait_for_heartbeat():
+            
+            # TODO: 連接失敗, 發送給server
+
+            error = ERROR_CODE.MAVLINK_CONNECTION_ERROR
             raise ConnectionError("無法與飛控建立連接")
+        
+
+        
+    def __connect_mavlink(self, port='/dev/ttyUSB0', baud=57600):
+        """
+        持續嘗試連接 MAVLink，直到成功為止。
+        """
+        while True:
+            self.master = mavutil.mavlink_connection(port, baud)
+            if self.__wait_for_heartbeat():
+                break  # 成功連接後退出循環
+            else:
+                # 發送連接失敗信息給 server（可根據實際需求實現）
+                error = ERROR_CODE.MAVLINK_CONNECTION_ERROR
+                self.get_logger().error("連接失敗，重新嘗試中...")
+                time.sleep(5)  # 等待 5 秒後再次嘗試
+
+
+
+    def __wait_for_heartbeat(self, timeout=10):
+        """
+        等待心跳包來確認連接成功，超時後返回 False。
+        :param timeout: 每次嘗試的等待時間（秒）
+        :return: 連接成功返回 True，失敗則返回 False
+        """
+        try:
+            self.get_logger().info("等待飛控心跳包...")
+            
+            # 開始倒數計時
+            start_time = time.time()
+            while time.time() - start_time < timeout:
+                msg = self.master.recv_match(type='HEARTBEAT', blocking=True, timeout=1)
+                remaining_time = timeout - int(time.time() - start_time)
+                self.get_logger().info(f"剩餘時間: {remaining_time} 秒", throttle_duration_sec=1)
+
+                if msg is not None and msg.get_srcSystem() > 0 and msg.get_srcComponent() > 0:
+                    self.get_logger().info(f"已連接到系統 {msg.get_srcSystem()}, 組件 {msg.get_srcComponent()}")
+                    return True
+
+            self.get_logger().error("無效的心跳訊息，系統或組件 ID 無效")
+        except Exception as e:
+            self.get_logger().error(f"連接過程中出現錯誤: {e}")
+
+        return False  # 超時後返回 False 以表示連接失敗
+
 
     def __wait_for_heartbeat(self, retries=3, timeout=10):
         """
@@ -196,6 +311,7 @@ class Check_status(Node):
 
             # if status["range_finder"] :
 
+        
 
             self.drone_status_dict["error_code"] = self.error_code_list
             
@@ -228,6 +344,60 @@ class Check_status(Node):
                 
         # print(erroe_code_list)
         return erroe_code_list
+
+
+    def check_usb_status(self):
+        """
+        發送非同步 USB 檢查請求，並在回應中更新 drone_status_dict。
+        """
+
+        request = CheckUSBDevices.Request()
+        future = self.cli.call_async(request)
+        future.add_done_callback(self.response_callback)
+
+    def response_callback(self, future):
+        """
+        處理 USB 檢查服務的回應，並將結果發送到伺服器。
+        """
+
+        response = future.result()
+        up_squared_status_dict = copy.deepcopy(self.up_squared_status_dict)
+
+
+        if response.success:
+            up_squared_status_dict = self.up_squared_status_dict
+            up_squared_status_dict["rgb_status"] = True
+            up_squared_status_dict["thermal_status"] = True
+
+        else:
+            missing_devices = response.missing_devices
+            device_names = [device.split(' (')[0] for device in missing_devices]
+
+
+            if 'Microdia USB 2.0 Camera' in device_names:
+                up_squared_status_dict["rgb_status"] = False
+                up_squared_status_dict["error_code"].append(ERROR_CODE.UP_SQUARE_RGB_CAMERA_ERROR)
+            else:
+                up_squared_status_dict["rgb_status"] = True  # 確保狀態更新正確
+
+            if 'Cypress Semiconductor Corp. GuideCamera' in device_names:
+                up_squared_status_dict["thermal_status"] = False
+                up_squared_status_dict["error_code"].append(ERROR_CODE.UP_SQUARE_THERMAL_CAMERA_ERROR)
+            else:
+                up_squared_status_dict["thermal_status"] = True      
+            
+            # print(json.dumps(up_squared_status_dict, indent=4, ensure_ascii=False))
+        
+        send_json_to_server(url="", data=up_squared_status_dict)
+
+        # print(response)
+
+
+            # print(device_names)
+            # print(type(device_names))  # list
+            
+
+        # self.get_logger().info(self.drone_status_dict["usb_status"])
 
 
 

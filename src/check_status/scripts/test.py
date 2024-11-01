@@ -4,9 +4,17 @@ import rclpy
 from rclpy.node import Node
 from drone_status_msgs.srv import CheckUSBDevices
 
+
+
 class USBClient(Node):
     def __init__(self):
         super().__init__('usb_client')
+
+        self.target_devices = {
+            '0c45:6364': 'Microdia USB 2.0 Camera',
+            '04b4:f8f8': 'Cypress Semiconductor Corp. GuideCamera'
+        }
+
         self.cli = self.create_client(CheckUSBDevices, 'check_usb_devices')
         
         # 等待服務啟動
@@ -30,7 +38,14 @@ class USBClient(Node):
         if response.success:
             self.get_logger().info("All target devices are connected.")
         else:
-            self.get_logger().warning("Missing devices: " + ", ".join(response.missing_devices))
+            # self.get_logger().warning("Missing devices: " + ", ".join(response.missing_devices))
+            # print(type(response.missing_devices))   # list
+
+            for i in range(len(response.missing_devices)):
+                print(response.missing_devices[i])
+                print(type(response.missing_devices[i])) # str
+
+
 
 def main(args=None):
     rclpy.init(args=args)

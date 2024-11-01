@@ -50,6 +50,8 @@ UINT8_MAX = (1 << 8) - 1  # 255
 class ERROR_CODE:
     SUCCESS = 0
 
+    # ------------------------------------ FCU ----------------------------------- #
+
     # sensor health
     HEALTH_GYRO_3D_ERROR = 100
     HEALTH_ACCELEROMETER_3D_ERROR = 101
@@ -91,6 +93,17 @@ class ERROR_CODE:
     ATTITUDE_PITCH_ERROR = 135
 
     MOTOR_OUTPUTS_ERROR = 136
+
+    MAVLINK_CONNECTION_ERROR = 137
+
+    
+    # ------------------------------ up squared i12 ------------------------------ #
+
+    UP_SQUARE_ERROR = 200
+    UP_SQUARE_RGB_CAMERA_ERROR = 201
+    UP_SQUARE_THERMAL_CAMERA_ERROR = 202
+
+
 
 
 
