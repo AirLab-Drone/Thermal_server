@@ -88,17 +88,16 @@ class Check_status(Node):
 
 
         # -------------------------------- up squared -------------------------------- #
+        # TODO:等待測試
 
         self.disconnected_start_time = None  # 初始化計時器
         self.__interval_time = 10
 
         self.cli = self.create_client(CheckUSBDevices, 'check_usb_devices')
 
-        self.check_UpSquared_service_status = self.create_timer(interval_time, self.check_UpSquared_service_status_callback)
 
-        # 定期檢查 USB 狀態 interval_time 秒
-        self.check_usb_status_timer = self.create_timer(interval_time, self.check_usb_status)
-
+        self.check_UpSquared_service_timer = self.create_timer(interval_time, self.check_UpSquared_service_callback)
+        self.check_usb_status_timer = self.create_timer(interval_time, self.check_usb_status_callback)
 
 
 
@@ -326,7 +325,7 @@ class Check_status(Node):
 
 
 
-    def check_UpSquared_service_status_callback(self): 
+    def check_UpSquared_service_callback(self): 
         # 如果服務可用
         if self.cli.service_is_ready():
             if self.disconnected_start_time is not None:
@@ -357,7 +356,7 @@ class Check_status(Node):
                 
 
 
-    def check_usb_status(self):
+    def check_usb_status_callback(self):
         """
         若服務可用，則發送非同步 USB 檢查請求，並在回應中更新 drone_status_dict。
         """
