@@ -97,7 +97,7 @@ class Check_status(Node):
         self.check_UpSquared_service_status = self.create_timer(interval_time, self.check_UpSquared_service_status_callback)
 
         # 定期檢查 USB 狀態 interval_time 秒
-        self.create_timer(interval_time, self.check_usb_status)
+        self.check_usb_status_timer = self.create_timer(interval_time, self.check_usb_status)
 
 
 
@@ -335,6 +335,7 @@ class Check_status(Node):
 
         # 如果服務不可用
         else:
+            # self.check_usb_status_timer.
             # 如果是第一次檢測到服務不可用，啟動計時器
             if self.disconnected_start_time is None:
                 self.disconnected_start_time = time.time()
@@ -378,7 +379,6 @@ class Check_status(Node):
 
 
         if response.success:
-            up_squared_status_dict = self.up_squared_status_dict
             up_squared_status_dict["rgb_status"] = True
             up_squared_status_dict["thermal_status"] = True
 
