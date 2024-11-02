@@ -12,18 +12,21 @@ import json
 import math
 import time
 import copy
+import os 
 
 from pymavlink import mavutil
 
 import rclpy
 from rclpy.node import Node
+from rclpy.time import Time
+from rclpy.duration import Duration
 from std_msgs.msg import Float32
 
 
 from drone_status_msgs.srv import CheckUSBDevices
 
 from check_status_py.error_code import *
-from check_status_py.tools import send_json_to_server   
+from check_status_py.tools import send_json_to_server, check_port_exists
 
 
 '''
@@ -43,7 +46,7 @@ database 有三個table
 
 class Check_status(Node):
 
-    def __init__(self, port='/dev/ttyUSB0', baud=57600, interval_time=1):
+    def __init__(self, interval_time=1):
         super().__init__('minimal_publisher')
 
         self.drone_status_dict = {  
@@ -74,13 +77,26 @@ class Check_status(Node):
 
 
         # ---------------------------------- mavlink --------------------------------- #
+        # TODO:若找不到/dev/ttyUSB0 要處理
+        self.mavlink_port = '/dev/ttyUSB0'
+        self.mavlink_baud = 57600
+
+        
+
+        # self.master = mavutil.mavlink_connection(self.mavlink_port, self.mavlink_baud)
 
 
-        # self.__connect_mavlink(port, baud)
+
+        # self.__connect_mavlink(self.mavlink_port, self.mavlink_baud)
+
+
+
 
         # self.latest_status = None
         # self.error_code_list = []
-        # # 秒取得一次
+        
+        self.check_port_timmer = self.create_timer(interval_time, self.check_port_callback)
+        # self.check_mavlink_connection_timer = self.create_timer(interval_time, self.check_mavlink_connection_callback)
         # self.timer = self.create_timer(interval_time, self.get_drone_status_callback)
 
 
@@ -91,7 +107,7 @@ class Check_status(Node):
         # TODO:等待測試
 
         self.disconnected_start_time = None  # 初始化計時器
-        self.__interval_time = 10
+        self.__interval_time = Duration(seconds=10)
 
         self.cli = self.create_client(CheckUSBDevices, 'check_usb_devices')
 
@@ -100,9 +116,22 @@ class Check_status(Node):
         self.check_usb_status_timer = self.create_timer(interval_time, self.check_usb_status_callback)
 
 
+    def check_port_callback(self):
+        if not check_port_exists(self.mavlink_port):
+            self.get_logger().error(f"Port {self.mavlink_port} not found. Please check the connection.")
+            self.get_logger().error("無法連接到飛控，請檢查連接。")
+            error = ERROR_CODE.MAVLINK_CONNECTION_ERROR
+            raise ConnectionError("無法與飛控建立連接")
+
+
+
+    def check_mavlink_connection_callback(self):
+        pass
+
+
 
     # TODO: 若是啟動後失敗 要寫偵測機制
-    def __connect_mavlink(self, port='/dev/ttyUSB0', baud=57600):
+    def __connect_mavlink(self, port, baud):
         self.master = mavutil.mavlink_connection(port, baud)
         if not self.__wait_for_heartbeat():
             
@@ -323,36 +352,56 @@ class Check_status(Node):
         # print(erroe_code_list)
         return erroe_code_list
 
-
-
-    def check_UpSquared_service_callback(self): 
-        # 如果服務可用
+    def check_UpSquared_service_callback(self):
         if self.cli.service_is_ready():
-            if self.disconnected_start_time is not None:
+            if self.disconnected_start_time:
                 self.get_logger().info("USB 檢查服務已連接。")
                 self.disconnected_start_time = None
-
-        # 如果服務不可用
         else:
-            # self.check_usb_status_timer.
-            # 如果是第一次檢測到服務不可用，啟動計時器
-            if self.disconnected_start_time is None:
-                self.disconnected_start_time = time.time()
+            if not self.disconnected_start_time:
+                self.disconnected_start_time = self.get_clock().now()
 
-            # 檢查是否已超過 interval_time
-            elapsed_time = time.time() - self.disconnected_start_time
-            self.get_logger().warn(f"USB 檢查服務不可用，正在等待重連... 已等待 {int(elapsed_time)} 秒")
+            elapsed_time = self.get_clock().now() - self.disconnected_start_time
+            self.get_logger().warn(f"USB 檢查服務不可用，已等待 {int(elapsed_time.nanoseconds / 1e9)} 秒")
+
             if elapsed_time > self.__interval_time:
-                self.get_logger().warn(f"USB 檢查服務已超過 {self.__interval_time} 秒不可用，發送警告至伺服器...")
+                self.get_logger().warn(f"USB 檢查服務已超過 {int(elapsed_time.nanoseconds / 1e9)} 秒不可用，發送警告至伺服器...")
 
-                # 上傳至伺服器
                 up_squared_status_dict = copy.deepcopy(self.up_squared_status_dict)
                 up_squared_status_dict["up_squared_service"] = False
                 up_squared_status_dict["error_code"].append(ERROR_CODE.UP_SQUARE_SERVICE_ERROR)
                 send_json_to_server(url="", data=up_squared_status_dict)
 
-                # 避免重複上傳，重置計時器以便在服務恢復可用時重新計時
-                self.disconnected_start_time = time.time()
+                self.disconnected_start_time = self.get_clock().now()
+
+    # def check_UpSquared_service_callback(self): 
+    #     # 如果服務可用
+    #     if self.cli.service_is_ready():
+    #         if self.disconnected_start_time is not None:
+    #             self.get_logger().info("USB 檢查服務已連接。")
+    #             self.disconnected_start_time = None
+
+    #     # 如果服務不可用
+    #     else:
+    #         # self.check_usb_status_timer.
+    #         # 如果是第一次檢測到服務不可用，啟動計時器
+    #         if self.disconnected_start_time is None:
+    #             self.disconnected_start_time = time.time()
+
+    #         # 檢查是否已超過 interval_time
+    #         elapsed_time = time.time() - self.disconnected_start_time
+    #         self.get_logger().warn(f"USB 檢查服務不可用，正在等待重連... 已等待 {int(elapsed_time)} 秒")
+    #         if elapsed_time > self.__interval_time:
+    #             self.get_logger().warn(f"USB 檢查服務已超過 {self.__interval_time} 秒不可用，發送警告至伺服器...")
+
+    #             # 上傳至伺服器
+    #             up_squared_status_dict = copy.deepcopy(self.up_squared_status_dict)
+    #             up_squared_status_dict["up_squared_service"] = False
+    #             up_squared_status_dict["error_code"].append(ERROR_CODE.UP_SQUARE_SERVICE_ERROR)
+    #             send_json_to_server(url="", data=up_squared_status_dict)
+
+    #             # 避免重複上傳，重置計時器以便在服務恢復可用時重新計時
+    #             self.disconnected_start_time = time.time()
                 
 
 
