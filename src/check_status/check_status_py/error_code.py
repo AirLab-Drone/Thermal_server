@@ -99,7 +99,7 @@ class ERROR_CODE:
     
     # ------------------------------ up squared i12 ------------------------------ #
 
-    UP_SQUARE_ERROR = 200
+    UP_SQUARE_SERVICE_ERROR = 200
     UP_SQUARE_RGB_CAMERA_ERROR = 201
     UP_SQUARE_THERMAL_CAMERA_ERROR = 202
 

@@ -66,60 +66,39 @@ class Check_status(Node):
             }
         
         self.up_squared_status_dict = {
+            "up_squared_service": None,
             "rgb_status": None,
             "thermal_status": None,
             "error_code": []
         }
 
 
-        timeout_warning_sent = False
-        # 初始化 USB 檢查服務
-        start_time = time.time()
+        # ---------------------------------- mavlink --------------------------------- #
+
+
+        # self.__connect_mavlink(port, baud)
+
+        # self.latest_status = None
+        # self.error_code_list = []
+        # # 秒取得一次
+        # self.timer = self.create_timer(interval_time, self.get_drone_status_callback)
+
+
+
+
+
+        # -------------------------------- up squared -------------------------------- #
+
+        self.disconnected_start_time = None  # 初始化計時器
+        self.__interval_time = 10
+
         self.cli = self.create_client(CheckUSBDevices, 'check_usb_devices')
 
-        # TODO: 若是啟動後失敗 要寫偵測機制
-        while not self.cli.wait_for_service(timeout_sec=1.0):
-            # 計算等待時間
-            elapsed_time = time.time() - start_time
-            self.get_logger().info(f'等待 USB 檢查服務啟動... 已等待 {elapsed_time:.0f} 秒')
-
-            # 當等待時間超過 10 秒且還未發送警告時，發送一次警告
-            if elapsed_time > 5 and not timeout_warning_sent:
-                self.get_logger().warn('等待 USB 檢查服務啟動超過 10 秒，發送警告至伺服器...')
-                
-                # 發送警告並且只增加一次錯誤代碼
-                up_squared_status_dict = copy.deepcopy(self.up_squared_status_dict)
-                up_squared_status_dict["error_code"].append(ERROR_CODE.UP_SQUARE_ERROR)
-                send_json_to_server(url="", data=up_squared_status_dict)
-                
-                timeout_warning_sent = True  # 標記已發送警告
-
-            # 如果已經發送過警告且再次嘗試重新連接，則重設計時器和警告狀態
-            if elapsed_time > 5:  # 假設每 15 秒重設一次計時器
-                start_time = time.time()
-                timeout_warning_sent = False  # 重置以便再次發送警告
-                
+        self.check_UpSquared_service_status = self.create_timer(interval_time, self.check_UpSquared_service_status_callback)
 
         # 定期檢查 USB 狀態 interval_time 秒
         self.create_timer(interval_time, self.check_usb_status)
-        
 
-
-
-
-
-        self.__connect_mavlink(port, baud)
-
-
-
-
-        
-        self.latest_status = None
-
-        self.error_code_list = []
-        
-        # 秒取得一次
-        self.timer = self.create_timer(interval_time, self.get_drone_status_callback)
 
 
 
@@ -346,14 +325,47 @@ class Check_status(Node):
         return erroe_code_list
 
 
+
+    def check_UpSquared_service_status_callback(self): 
+        # 如果服務可用
+        if self.cli.service_is_ready():
+            if self.disconnected_start_time is not None:
+                self.get_logger().info("USB 檢查服務已連接。")
+                self.disconnected_start_time = None
+
+        # 如果服務不可用
+        else:
+            # 如果是第一次檢測到服務不可用，啟動計時器
+            if self.disconnected_start_time is None:
+                self.disconnected_start_time = time.time()
+
+            # 檢查是否已超過 interval_time
+            elapsed_time = time.time() - self.disconnected_start_time
+            self.get_logger().warn(f"USB 檢查服務不可用，正在等待重連... 已等待 {int(elapsed_time)} 秒")
+            if elapsed_time > self.__interval_time:
+                self.get_logger().warn(f"USB 檢查服務已超過 {self.__interval_time} 秒不可用，發送警告至伺服器...")
+
+                # 上傳至伺服器
+                up_squared_status_dict = copy.deepcopy(self.up_squared_status_dict)
+                up_squared_status_dict["up_squared_service"] = False
+                up_squared_status_dict["error_code"].append(ERROR_CODE.UP_SQUARE_SERVICE_ERROR)
+                send_json_to_server(url="", data=up_squared_status_dict)
+
+                # 避免重複上傳，重置計時器以便在服務恢復可用時重新計時
+                self.disconnected_start_time = time.time()
+                
+
+
     def check_usb_status(self):
         """
-        發送非同步 USB 檢查請求，並在回應中更新 drone_status_dict。
+        若服務可用，則發送非同步 USB 檢查請求，並在回應中更新 drone_status_dict。
         """
-
-        request = CheckUSBDevices.Request()
-        future = self.cli.call_async(request)
-        future.add_done_callback(self.response_callback)
+        if self.cli.service_is_ready():
+            request = CheckUSBDevices.Request()
+            future = self.cli.call_async(request)
+            future.add_done_callback(self.response_callback)
+        else:
+            return
 
     def response_callback(self, future):
         """
@@ -362,6 +374,7 @@ class Check_status(Node):
 
         response = future.result()
         up_squared_status_dict = copy.deepcopy(self.up_squared_status_dict)
+        up_squared_status_dict["up_squared_service"] = True
 
 
         if response.success:

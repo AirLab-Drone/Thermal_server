@@ -19,6 +19,7 @@ ament_python_install_package(${PROJECT_NAME}_py)
 file(GLOB SCRIPTS "scripts/*.py")
 install(PROGRAMS
   ${SCRIPTS}
+  scripts/mavlink_test_node.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
