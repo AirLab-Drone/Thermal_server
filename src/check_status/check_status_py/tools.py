@@ -20,7 +20,4 @@ def send_json_to_server(url, data):
 
 
 def check_port_exists(port):
-    if not os.path.exists(port):
-        print(f"Port {port} not found. Please check the connection.")
-        return False
-    return True
+    return os.path.exists(port)

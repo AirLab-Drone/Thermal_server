@@ -30,7 +30,6 @@ from check_status_py.tools import send_json_to_server, check_port_exists
 
 
 '''
-# TODO:同時檢查是否有接上飛控跟電腦
 database 有三個table
     1. 飛控狀態
     2. up squared 狀態 (RGB, Thermal) 
@@ -38,16 +37,11 @@ database 有三個table
 ''' 
 
 
-# !寫兩個callback 用來檢查 up squared 和 FUC 是否有連接上
-# !一個callback 用來檢查飛控狀態
-# !一個callback 用來檢查USB狀態
-
-
 
 class Check_status(Node):
 
     def __init__(self, interval_time=1):
-        super().__init__('minimal_publisher')
+        super().__init__('check_status')
 
         self.drone_status_dict = {  
             "sensor_health": None,
@@ -76,8 +70,9 @@ class Check_status(Node):
         }
 
 
+        self.__interval_time = Duration(seconds=5)
+
         # ---------------------------------- mavlink --------------------------------- #
-        # TODO:若找不到/dev/ttyUSB0 要處理
         self.mavlink_port = '/dev/ttyUSB0'
         self.mavlink_baud = 57600
 
@@ -94,9 +89,12 @@ class Check_status(Node):
 
         # self.latest_status = None
         # self.error_code_list = []
+
+        self.port_not_found_time = None
+        self.IsMavlinkConnect = False
         
-        self.check_port_timmer = self.create_timer(interval_time, self.check_port_callback)
-        # self.check_mavlink_connection_timer = self.create_timer(interval_time, self.check_mavlink_connection_callback)
+        # self.check_port_timmer = self.create_timer(interval_time, self.check_port_callback)
+        self.check_mavlink_connection_timer = self.create_timer(interval_time, self.check_mavlink_connection_callback)
         # self.timer = self.create_timer(interval_time, self.get_drone_status_callback)
 
 
@@ -107,26 +105,42 @@ class Check_status(Node):
         # TODO:等待測試
 
         self.disconnected_start_time = None  # 初始化計時器
-        self.__interval_time = Duration(seconds=10)
 
         self.cli = self.create_client(CheckUSBDevices, 'check_usb_devices')
 
-
         self.check_UpSquared_service_timer = self.create_timer(interval_time, self.check_UpSquared_service_callback)
-        self.check_usb_status_timer = self.create_timer(interval_time, self.check_usb_status_callback)
-
-
-    def check_port_callback(self):
-        if not check_port_exists(self.mavlink_port):
-            self.get_logger().error(f"Port {self.mavlink_port} not found. Please check the connection.")
-            self.get_logger().error("無法連接到飛控，請檢查連接。")
-            error = ERROR_CODE.MAVLINK_CONNECTION_ERROR
-            raise ConnectionError("無法與飛控建立連接")
-
+        # self.check_usb_status_timer = self.create_timer(interval_time, self.check_usb_status_callback)
 
 
     def check_mavlink_connection_callback(self):
-        pass
+        current_time = self.get_clock().now()
+
+        
+        if not check_port_exists(self.mavlink_port):
+            if self.port_not_found_time is None:
+                self.port_not_found_time = current_time
+                # self.get_logger().warn(f"Port {self.mavlink_port} not found. Checking again...")
+            
+            elapsed_time = current_time - self.port_not_found_time
+            self.get_logger().warn(f"Port {self.mavlink_port} 不可用, 以等待 {int(elapsed_time.nanoseconds / 1e9)} 秒")
+
+
+            if elapsed_time > self.__interval_time:
+                drone_status_dict = copy.deepcopy(self.drone_status_dict)
+                drone_status_dict["error_code"].append(ERROR_CODE.MAVLINK_CONNECTION_ERROR)
+                self.get_logger().error(f"Port {self.mavlink_port} 已超過 {int(elapsed_time.nanoseconds / 1e9)} 秒不可用，發送警告至伺服器...")
+                send_json_to_server(url="", data=drone_status_dict)
+                
+                # 重置 port_not_found_time 避免重複上傳
+                self.port_not_found_time = current_time  # 這樣將每隔 port_check_timeout 上傳一次狀態
+                return
+
+        else:
+            self.get_logger().info(f"找到 {self.mavlink_port}，正在等待連接飛控...")
+
+
+
+
 
 
 
@@ -352,11 +366,19 @@ class Check_status(Node):
         # print(erroe_code_list)
         return erroe_code_list
 
+
+
+    # TODO: 測試這個callback
     def check_UpSquared_service_callback(self):
         if self.cli.service_is_ready():
             if self.disconnected_start_time:
                 self.get_logger().info("USB 檢查服務已連接。")
                 self.disconnected_start_time = None
+
+            request = CheckUSBDevices.Request()
+            future = self.cli.call_async(request)
+            future.add_done_callback(self.response_callback)
+
         else:
             if not self.disconnected_start_time:
                 self.disconnected_start_time = self.get_clock().now()
@@ -365,7 +387,7 @@ class Check_status(Node):
             self.get_logger().warn(f"USB 檢查服務不可用，已等待 {int(elapsed_time.nanoseconds / 1e9)} 秒")
 
             if elapsed_time > self.__interval_time:
-                self.get_logger().warn(f"USB 檢查服務已超過 {int(elapsed_time.nanoseconds / 1e9)} 秒不可用，發送警告至伺服器...")
+                self.get_logger().error(f"USB 檢查服務已超過 {int(elapsed_time.nanoseconds / 1e9)} 秒不可用，發送警告至伺服器...")
 
                 up_squared_status_dict = copy.deepcopy(self.up_squared_status_dict)
                 up_squared_status_dict["up_squared_service"] = False
@@ -405,16 +427,16 @@ class Check_status(Node):
                 
 
 
-    def check_usb_status_callback(self):
-        """
-        若服務可用，則發送非同步 USB 檢查請求，並在回應中更新 drone_status_dict。
-        """
-        if self.cli.service_is_ready():
-            request = CheckUSBDevices.Request()
-            future = self.cli.call_async(request)
-            future.add_done_callback(self.response_callback)
-        else:
-            return
+    # def check_usb_status_callback(self):
+    #     """
+    #     若服務可用，則發送非同步 USB 檢查請求，並在回應中更新 drone_status_dict。
+    #     """
+    #     if self.cli.service_is_ready():
+    #         request = CheckUSBDevices.Request()
+    #         future = self.cli.call_async(request)
+    #         future.add_done_callback(self.response_callback)
+    #     else:
+    #         return
 
     def response_callback(self, future):
         """
