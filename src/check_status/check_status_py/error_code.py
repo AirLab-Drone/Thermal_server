@@ -94,7 +94,8 @@ class ERROR_CODE:
 
     MOTOR_OUTPUTS_ERROR = 136
 
-    MAVLINK_CONNECTION_ERROR = 137
+    MAVLINK_PORT_ERROR = 137
+    MAVLINK_CONNECTION_ERROR = 138
 
     
     # ------------------------------ up squared i12 ------------------------------ #
