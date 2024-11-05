@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 from datetime import datetime, timezone, timedelta
+import json
 import requests
 import os
 
@@ -19,6 +20,7 @@ def send_json_to_database(url, data):
 def send_json_to_server(url, data):
     # print(f"send_json_to_server {url}")
     print(data)
+    # print(json.dumps(data, indent=4, ensure_ascii=False))
     pass
 
 

@@ -24,8 +24,6 @@ from rclpy.duration import Duration
 from std_msgs.msg import Float32
 
 
-from drone_status_msgs.srv import CheckUSBDevices
-
 from check_status_py.error_code import *
 from check_status_py.tools import send_json_to_server, check_port_exists, ros2_time_to_taiwan_timezone
 
@@ -66,15 +64,14 @@ class check_Drone_status(Node):
             }
         
 
-
-
         self.__interval_time = Duration(seconds=5)
 
         self.__server_url = ""
 
         # ---------------------------------- mavlink --------------------------------- #
-        # TODO:等待測試
-        self.mavlink_port = '/dev/ttyUSB0'
+        # TODO: 幹你娘問題一堆 要重寫==
+        
+        self.mavlink_port = '/dev/drone_usb'
         self.mavlink_baud = 57600
     
         self.master = None
@@ -82,81 +79,86 @@ class check_Drone_status(Node):
         self.MavLink_latest_status = None
         self.MavLink_error_code_list = []
 
-        self.MavLink_port_not_found_time = None
-        self.MavLink_connect_time = None
-        self.MavLink_disconnect_time = None
-        
+        self.mavlink_timer = None
+        self.mavlink_status = None  # 狀態標記：'not_found', 'connecting', 'connected'
+
+                
         self.check_mavlink_connection_timer = self.create_timer(1, self.check_mavlink_connection_callback)
-        # self.timer = self.create_timer(interval_time, self.get_drone_status_callback)
+
+        self.check_drone_status_timer = self.create_timer(10, self.get_drone_status_callback)
      
 
 
     def check_mavlink_connection_callback(self):
         current_time = self.get_clock().now()
-        current_time_msg = current_time.to_msg()
 
-
+        # 設定上傳時間
         drone_status_dict = copy.deepcopy(self.drone_status_dict)
-        drone_status_dict["upload_time"] = datetime.fromtimestamp(current_time_msg.sec + current_time_msg.nanosec / 1e9, tz=timezone.utc)
-
+        drone_status_dict["upload_time"] = ros2_time_to_taiwan_timezone(current_time)
 
         # 檢查 mavlink port 是否存在
         if not check_port_exists(self.mavlink_port):
-            if self.MavLink_port_not_found_time is None:
-                self.MavLink_port_not_found_time = current_time
-                # self.get_logger().warn(f"Port {self.mavlink_port} not found. Checking again...")
-            
-            elapsed_time = current_time - self.MavLink_port_not_found_time
+            if self.mavlink_status != 'not_found':
+                # 初次進入 "not_found" 狀態，設定計時器
+                self.mavlink_status = 'not_found'
+                self.mavlink_timer = current_time
+
+            elapsed_time = current_time - self.mavlink_timer
             self.get_logger().warn(f"Port {self.mavlink_port} 不可用, 以等待 {int(elapsed_time.nanoseconds / 1e9)} 秒")
 
-
             if elapsed_time > self.__interval_time:
-                
                 drone_status_dict["error_code"].append(ERROR_CODE.MAVLINK_PORT_ERROR)
                 self.get_logger().error(f"Port {self.mavlink_port} 已超過 {int(elapsed_time.nanoseconds / 1e9)} 秒不可用，發送警告至伺服器...")
                 send_json_to_server(url=self.__server_url, data=drone_status_dict)
                 
-                # 重置 port_not_found_time 避免重複上傳
-                self.MavLink_port_not_found_time = current_time  # 這樣將每隔 port_check_timeout 上傳一次狀態
+                # 重置計時器
+                self.mavlink_timer = current_time
             return
 
-        # mavlink 第一次連接
+        # Mavlink 第一次連接
         if self.master is None:
-            if self.MavLink_connect_time is None:
-                self.MavLink_connect_time = current_time  # 開始連接計時
-            self.get_logger().info(f"找到 {self.mavlink_port}，正在嘗試連接飛控...")
+            if self.mavlink_status != 'connecting':
+                # 進入 "connecting" 狀態
+                self.mavlink_status = 'connecting'
+                self.mavlink_timer = current_time
+                self.get_logger().info(f"找到 {self.mavlink_port}，正在嘗試連接飛控...")
 
             if not self.__connect_mavlink(self.mavlink_port, self.mavlink_baud):
-                elapsed_time = current_time - self.MavLink_connect_time
+                elapsed_time = current_time - self.mavlink_timer
                 self.get_logger().warn(f"無法連接到 Mavlink，已等待 {int(elapsed_time.nanoseconds / 1e9)} 秒")
+                
                 if elapsed_time > self.__interval_time:
                     drone_status_dict["error_code"].append(ERROR_CODE.MAVLINK_CONNECTION_ERROR)
                     self.get_logger().error(f"無法在 {int(elapsed_time.nanoseconds / 1e9)} 秒內連接到 Mavlink，發送警告至伺服器...")
                     send_json_to_server(url=self.__server_url, data=drone_status_dict)
-                    # 重置連接計時器以便下次重新開始計時
-                    self.MavLink_connect_time = current_time
+                    # 重置計時器
+                    self.mavlink_timer = current_time
                     self.master = None
                 return
-        
+
+        # 檢查連線狀態
         if not self.__check_heartbeat() and self.master is not None:
-            if self.MavLink_disconnect_time is None:
-                self.MavLink_disconnect_time = current_time  # 記錄斷線開始的時間
-            
-            elapsed_time = current_time - self.MavLink_disconnect_time
+            if self.mavlink_status != 'connected':
+                # 設定 "connected" 狀態
+                self.mavlink_status = 'connected'
+                self.mavlink_timer = current_time
+
+            elapsed_time = current_time - self.mavlink_timer
             self.get_logger().warn(f"Mavlink 連線中斷，已等待 {int(elapsed_time.nanoseconds / 1e9)} 秒")
 
             if elapsed_time > self.__interval_time:
-                
                 drone_status_dict["error_code"].append(ERROR_CODE.MAVLINK_CONNECTION_ERROR)
                 self.get_logger().error(f"Mavlink 連線中斷超過 {int(elapsed_time.nanoseconds / 1e9)} 秒，發送警告至伺服器...")
                 send_json_to_server(url=self.__server_url, data=drone_status_dict)
 
-                self.MavLink_disconnect_time = current_time
+                # 重置計時器和狀態
+                self.mavlink_timer = current_time
                 self.master = None
+                self.mavlink_status = 'not_found'  # 重置為斷開狀態
 
         else:
-            self.get_logger().info("Mavlink 連線正常")
-            self.get_drone_status_callback()
+
+            # self.get_logger().info("Mavlink 連線正常")
             return
 
 
@@ -196,7 +198,7 @@ class check_Drone_status(Node):
             while time.time() - start_time < timeout:
                 msg = self.master.recv_match(type='HEARTBEAT', blocking=True, timeout=1)
                 remaining_time = timeout - int(time.time() - start_time)
-                self.get_logger().info(f"剩餘時間: {remaining_time} 秒", throttle_duration_sec=1)
+                self.get_logger().warn(f"剩餘時間: {remaining_time} 秒", throttle_duration_sec=1)
 
                 if msg is not None and msg.get_srcSystem() > 0 and msg.get_srcComponent() > 0:
                     self.get_logger().info(f"已連接到系統 {msg.get_srcSystem()}, 組件 {msg.get_srcComponent()}")
@@ -209,34 +211,6 @@ class check_Drone_status(Node):
         return False  # 超時後返回 False 以表示連接失敗
 
 
-    # def __wait_for_heartbeat(self, retries=3, timeout=10):
-    #     """
-    #     等待心跳包來確認連接成功，失敗則重試指定次數，並顯示倒數計時。
-    #     :param retries: 重試次數
-    #     :param timeout: 每次嘗試的等待時間（秒）
-    #     :return: 連接成功返回 True，失敗則返回 False
-    #     """
-    #     for attempt in range(retries):
-    #         try:
-    #             self.get_logger().info(f"等待飛控心跳包...（嘗試 {attempt + 1}/{retries}）")
-                
-    #             # 開始倒數計時
-    #             start_time = time.time()
-    #             while time.time() - start_time < timeout:
-    #                 msg = self.master.recv_match(type='HEARTBEAT', blocking=True, timeout=1)
-    #                 remaining_time = timeout - int(time.time() - start_time)
-    #                 self.get_logger().info(f"剩餘時間: {remaining_time} 秒", throttle_duration_sec=1)
-
-    #                 if msg is not None and msg.get_srcSystem() > 0 and msg.get_srcComponent() > 0:
-    #                     self.get_logger().info(f"已連接到系統 {msg.get_srcSystem()}, 組件 {msg.get_srcComponent()}")
-    #                     return True
-
-    #             self.get_logger().error("無效的心跳訊息，系統或組件 ID 無效")
-    #         except Exception as e:
-    #             self.get_logger().error(f"第 {attempt + 1} 次連接失敗: {e}")
-
-        return False  # 超過重試次數後，返回 False 以表示連接失敗
-    
 
 
     def __check_heartbeat(self) -> bool:
@@ -247,7 +221,8 @@ class check_Drone_status(Node):
             msg = self.master.recv_match(type='HEARTBEAT', blocking=True, timeout=1)
             return msg is not None and msg.get_srcSystem() > 0 and msg.get_srcComponent() > 0
         except Exception as e:
-            self.get_logger().error(f"檢查心跳訊息時出現錯誤: {e}")
+            # self.get_logger().error(f"檢查心跳訊息時出現錯誤: {e}")
+
             return False
 
 
@@ -255,7 +230,9 @@ class check_Drone_status(Node):
 
     def __get_mavlink_message(self, message_type, timeout=5):
         try:
-            return self.master.recv_match(type=message_type, blocking=False, timeout=timeout)
+            msg = self.master.recv_match(type=message_type, blocking=True, timeout=timeout)
+            # print(msg)
+            return msg
         except Exception as e:
             print(f"獲取 {message_type} 消息時出現錯誤: {e}")
             return None
@@ -265,53 +242,56 @@ class check_Drone_status(Node):
         """
         獲取飛控的狀態信息。
         """
-        drone_status_dict = copy.deepcopy(self.drone_status_dict)
+        if self.mavlink_status == 'connected':
 
-        try:
-            sys_status = self.__get_mavlink_message('SYS_STATUS')
-            if sys_status:
-                drone_status_dict["sensor_health"] = sys_status.onboard_control_sensors_health
+            drone_status_dict = copy.deepcopy(self.drone_status_dict)
+
+            try:
+                sys_status = self.__get_mavlink_message('SYS_STATUS')
+                if sys_status:
+                    drone_status_dict["sensor_health"] = sys_status.onboard_control_sensors_health
+                    
+                    drone_status_dict["battery_voltage"] = sys_status.voltage_battery
+                    drone_status_dict["battery_current"] = sys_status.current_battery
+                    drone_status_dict["battery_remaining"] = sys_status.battery_remaining
+
+                gps_raw_int = self.__get_mavlink_message('GPS_RAW_INT')
+                if gps_raw_int:
+                    drone_status_dict["gps_hdop"] = gps_raw_int.eph
+                    drone_status_dict["gps_satellites_visible"] = gps_raw_int.satellites_visible
+
+                attitude = self.__get_mavlink_message('ATTITUDE')
+                if attitude:
+                    drone_status_dict["attitude_roll"] = attitude.roll
+                    drone_status_dict["attitude_pitch"] = attitude.pitch
+                    drone_status_dict["attitude_yaw"] = attitude.yaw
+
+                    # self.drone_status_dict["attitude_roll"] = round(attitude.roll, 3)
+                    # self.drone_status_dict["attitude_pitch"] = round(attitude.pitch, 3)
+                    # self.drone_status_dict["attitude_yaw"] = round(attitude.yaw, 3)
+
+                servo_output_raw = self.__get_mavlink_message('SERVO_OUTPUT_RAW')
+                if servo_output_raw:
+                    for i in range(1, 7):
+                        drone_status_dict[f"servo_output_{i}"] = getattr(servo_output_raw, f"servo{i}_raw")
+
+
+
+                # print(json.dumps(self.drone_status_dict, indent=4, ensure_ascii=False))
+                self.MavLink_latest_status = drone_status_dict
                 
-                drone_status_dict["battery_voltage"] = sys_status.voltage_battery
-                drone_status_dict["battery_current"] = sys_status.current_battery
-                drone_status_dict["battery_remaining"] = sys_status.battery_remaining
-
-            gps_raw_int = self.__get_mavlink_message('GPS_RAW_INT')
-            if gps_raw_int:
-                drone_status_dict["gps_hdop"] = gps_raw_int.eph
-                drone_status_dict["gps_satellites_visible"] = gps_raw_int.satellites_visible
-
-            attitude = self.__get_mavlink_message('ATTITUDE')
-            if attitude:
-                drone_status_dict["attitude_roll"] = attitude.roll
-                drone_status_dict["attitude_pitch"] = attitude.pitch
-                drone_status_dict["attitude_yaw"] = attitude.yaw
-
-                # self.drone_status_dict["attitude_roll"] = round(attitude.roll, 3)
-                # self.drone_status_dict["attitude_pitch"] = round(attitude.pitch, 3)
-                # self.drone_status_dict["attitude_yaw"] = round(attitude.yaw, 3)
-
-            servo_output_raw = self.__get_mavlink_message('SERVO_OUTPUT_RAW')
-            if servo_output_raw:
-                for i in range(1, 7):
-                    drone_status_dict[f"servo_output_{i}"] = getattr(servo_output_raw, f"servo{i}_raw")
+                # return self.drone_status_dict  # callback can't return value
 
 
+            except Exception as e:
+                print(f"錯誤: {e}")
 
-            # print(json.dumps(self.drone_status_dict, indent=4, ensure_ascii=False))
-            self.MavLink_latest_status = drone_status_dict
-            
-            # return self.drone_status_dict  # callback can't return value
-
-
-        except Exception as e:
-            print(f"錯誤: {e}")
-
-        self.check_drone_status()
+            self.check_drone_status()
 
 
     def get_last_status(self) -> dict:
         if self.MavLink_latest_status:
+            # print(json.dumps(self.MavLink_latest_status, indent=4, ensure_ascii=False))
             return self.MavLink_latest_status
         
 
