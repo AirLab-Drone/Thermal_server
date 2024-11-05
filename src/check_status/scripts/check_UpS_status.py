@@ -30,14 +30,6 @@ from check_status_py.error_code import *
 from check_status_py.tools import send_json_to_server, ros2_time_to_taiwan_timezone
 
 
-'''
-database 有三個table
-    1. 飛控狀態 
-    2. up squared 狀態 (RGB, Thermal) 
-    3. 環境熱像儀狀態
-''' 
-# TODO: Envirmental thermal camera status check
-
 
 
 class check_UpS_status(Node):
