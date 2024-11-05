@@ -184,25 +184,6 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-    # print(len(sensor_flags))
-    {
-    "sensor_health": 1467088239,
-    "battery_voltage": 46104,
-    "battery_current": 158,
-    "battery_remaining": 56,
-    "gps_hdop": 30,
-    "gps_satellites_visible": 4,
-    "attitude_roll": -0.008461258374154568,
-    "attitude_pitch": 0.018391260877251625,
-    "attitude_yaw": 1.9347625970840454,
-    "servo_output_1": 1000,
-    "servo_output_2": 1000,
-    "servo_output_3": 1000,
-    "servo_output_4": 1000,
-    "servo_output_5": 1000,
-    "servo_output_6": 1000,
-    "error_code": None
-    }
 
 
 
