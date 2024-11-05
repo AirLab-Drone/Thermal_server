@@ -8,11 +8,11 @@ ls /dev/ttyUSB*
 sudo chmod 777 /dev/ttyUSB0
 '''
 
+import copy
+from datetime import datetime, timezone
 import json
 import math
 import time
-import copy
-import os 
 
 from pymavlink import mavutil
 
@@ -45,6 +45,7 @@ class Check_status(Node):
         super().__init__('check_status')
 
         self.drone_status_dict = {  
+            "upload_time": None,
             "sensor_health": None,
             "battery_voltage": None,           # uint16_t      mV       invalid:UINT16_MAX
             "battery_current": None,           # int16_t	   cA	    invalid:-1
@@ -64,6 +65,7 @@ class Check_status(Node):
             }
         
         self.up_squared_status_dict = {
+            "upload_time": None,
             "up_squared_service": None,
             "rgb_status": None,
             "thermal_status": None,
@@ -109,9 +111,12 @@ class Check_status(Node):
 
     def check_mavlink_connection_callback(self):
         current_time = self.get_clock().now()
+        current_time_msg = current_time.to_msg()
 
 
         drone_status_dict = copy.deepcopy(self.drone_status_dict)
+        drone_status_dict["upload_time"] = datetime.fromtimestamp(current_time_msg.sec + current_time_msg.nanosec / 1e9, tz=timezone.utc)
+
 
         # 檢查 mavlink port 是否存在
         if not check_port_exists(self.mavlink_port):
@@ -332,6 +337,12 @@ class Check_status(Node):
         status = self.get_last_status()
 
         if status:
+            drone_status_dict = copy.deepcopy(self.drone_status_dict)
+            current_time = self.get_clock().now()
+            current_time_msg = current_time.to_msg()
+            drone_status_dict["upload_time"] = datetime.fromtimestamp(current_time_msg.sec + current_time_msg.nanosec / 1e9, tz=timezone.utc)
+
+
             sensor_health = status["sensor_health"]
             # print(f"系統感測器健康狀態: {sensor_health}")
 
@@ -372,11 +383,11 @@ class Check_status(Node):
 
         
 
-            self.drone_status_dict["error_code"] = self.MavLink_error_code_list
-            
+            drone_status_dict["error_code"] = self.MavLink_error_code_list
 
+            send_json_to_server(url=self.__server_url, data=drone_status_dict)
 
-            print(json.dumps(self.drone_status_dict, indent=4, ensure_ascii=False))
+            # print(json.dumps(self.drone_status_dict, indent=4, ensure_ascii=False))
             # print(self.error_code_list)
             
 
