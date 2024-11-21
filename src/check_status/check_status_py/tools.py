@@ -19,7 +19,7 @@ def send_json_to_database(url, data):
 # TODO:上傳失敗的錯誤處理
 def send_json_to_server(url, data):
     # print(f"send_json_to_server {url}")
-    print(data)
+    # print(data)
     # print(json.dumps(data, indent=4, ensure_ascii=False))
     pass
 
