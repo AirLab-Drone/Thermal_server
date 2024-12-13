@@ -14,6 +14,7 @@ import pytz
 import json
 import math
 import time
+import requests
 
 from pymavlink import mavutil
 
@@ -27,7 +28,7 @@ from std_msgs.msg import Float32
 from drone_status_msgs.srv import CheckUSBDevices
 
 from check_status_py.error_code import *
-from check_status_py.tools import post_to_server, ros2_time_to_taiwan_timezone
+from check_status_py.tools import post_to_server, ros2_time_to_taiwan_timezone, print_json
 
 
 
@@ -49,7 +50,7 @@ class check_UpS_status(Node):
         # 斷線等待時間
         self.__interval_time = Duration(seconds=5)
 
-        self.__server_url = ""
+        self.__server_url = "http://127.0.0.1:5000/upload/UpSquaredStatus"
 
 
         # -------------------------------- up squared -------------------------------- #
@@ -90,7 +91,15 @@ class check_UpS_status(Node):
                 up_squared_status_dict["up_squared_service"] = False
                 up_squared_status_dict["error_code"].append(ERROR_CODE.UP_SQUARE_SERVICE_ERROR)
                 up_squared_status_dict["upload_time"] = upload_time
-                post_to_server(url=self.__server_url, data=up_squared_status_dict)
+
+
+                try:
+                    print_json(up_squared_status_dict)
+                    if post_to_server(url=self.__server_url, json=up_squared_status_dict).status_code == 200:
+                        self.get_logger().error("已成功發送警告至伺服器")
+                except Exception as e:
+                    self.get_logger().error(f"發生錯誤: {e}")
+
 
                 self.UpSquared_disconnected_start_time = self.get_clock().now()
         else:
@@ -150,7 +159,12 @@ class check_UpS_status(Node):
             
             # print(json.dumps(up_squared_status_dict, indent=4, ensure_ascii=False))
         
-        post_to_server(url=self.__server_url, data=up_squared_status_dict)
+        try:
+            print_json(up_squared_status_dict)
+            if post_to_server(url=self.__server_url, json=up_squared_status_dict).status_code == 200:
+                self.get_logger().error("已成功發送警告至伺服器")
+        except Exception as e:
+            self.get_logger().error(f"發生錯誤: {e}")
 
         # print(response)
 

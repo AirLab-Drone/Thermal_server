@@ -12,7 +12,7 @@ sudo chmod 777 /dev/ttyUSB0
 from datetime import datetime, timezone
 import json
 import math
-
+import requests
 
 from pymavlink import mavutil
 
@@ -23,7 +23,7 @@ from rclpy.duration import Duration
 
 
 from check_status_py.error_code import *
-from check_status_py.tools import post_to_server, check_port_exists, ros2_time_to_taiwan_timezone
+from check_status_py.tools import post_to_server, check_port_exists, ros2_time_to_taiwan_timezone, print_json
 
 
 '''
@@ -65,7 +65,7 @@ class check_Drone_status(Node):
         
 
 
-        self.__server_url = ""
+        self.__server_url = "http://127.0.0.1:5000/upload/DroneStatus"
 
         # ---------------------------------- mavlink --------------------------------- #
         # self.mavlink_port = '/dev/ttyACM0'      # wired connection
@@ -96,17 +96,17 @@ class check_Drone_status(Node):
             if isinstance(upload_drone_status["upload_time"], datetime):
                 upload_drone_status["upload_time"] = upload_drone_status["upload_time"].isoformat()
 
-            # 將狀態字典轉換為 JSON 格式的字符串
-            json_data = json.dumps(upload_drone_status, indent=4, ensure_ascii=False)
-
-            # 打印 JSON 字符串（測試用）
-            print(json_data)
+            print_json(upload_drone_status)
 
             # 將資料發送到伺服器
-            post_to_server(url=self.__server_url, data=json_data)
+            response = post_to_server(url=self.__server_url, json=upload_drone_status).status_code
+            if response == 200:
+                self.get_logger().info(f"上傳成功: {upload_drone_status}")
+            else:
+                self.get_logger().error(f"上傳失敗: {upload_drone_status}")
 
         except Exception as e:
-            self.get_logger().error(f"轉換為 JSON 格式時發生錯誤: {e}")
+            self.get_logger().error(f"{e}")
 
 
 

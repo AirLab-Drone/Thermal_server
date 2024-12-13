@@ -7,6 +7,7 @@ from cv_bridge import CvBridge
 
 import requests
 import cv2
+import base64
 
 
 from check_status_py.error_code import *
@@ -76,7 +77,7 @@ class check_thermal_camera(Node):
         }
 
         
-        self.server_url = "http://127.0.0.1:5000/upload_image"  # Flask 伺服器的 URL
+        self.server_url = "http://127.0.0.1:5000/upload/ThermalCameraStatus"  # Flask 伺服器的 URL
 
         self.send_server_timmer = self.create_timer(0.5, self.send_server_callback)
 
@@ -103,98 +104,156 @@ class check_thermal_camera(Node):
 
 
 
-
-
     def send_server_callback(self):
+        
+        current_time = self.get_clock().now()
+
+        self.ipt430m_status_dict["upload_time"] = ros2_time_to_taiwan_timezone(current_time)
+        self.ds4025ft_status_dict["upload_time"] = ros2_time_to_taiwan_timezone(current_time)
+
+        # 檢查 IPT430M 是否超時
+        if (current_time - self.last_ipt430m_update).nanoseconds / 1e9 > self.data_timeout_sec:
+            self.get_logger().error("IPT430M data timeout")
+            self.ipt430m_status_dict.update({
+                "hot_spot_temp": None,
+                "thermal_img": False,
+                "error_code": [ERROR_CODE.THERMAL_IMG_ERROR, ERROR_CODE.THERMAL_HOT_SPOT_TEMP_ERROR]
+            })
+            self.ipt430m_thermal_img = None
+            self.ipt430m_thermal_hot_spot_temp = None
+        else:
+            self.ipt430m_status_dict.update({
+                "hot_spot_temp": self.ipt430m_thermal_hot_spot_temp,
+                "thermal_img": True,
+                "error_code": []
+            })
+
+        # 檢查 DS4025FT 是否超時
+        if (current_time - self.last_ds4025ft_update).nanoseconds / 1e9 > self.data_timeout_sec:
+            self.get_logger().error("DS4025FT data timeout")
+            self.ds4025ft_status_dict.update({
+                "hot_spot_temp": None,
+                "thermal_img": False,
+                "error_code": [ERROR_CODE.THERMAL_IMG_ERROR, ERROR_CODE.THERMAL_HOT_SPOT_TEMP_ERROR]
+            })
+            self.ds4025ft_thermal_img = None
+            self.ds4025ft_thermal_hot_spot_temp = None
+        else:
+            self.ds4025ft_status_dict.update({
+                "hot_spot_temp": self.ds4025ft_thermal_hot_spot_temp,
+                "thermal_img": True,
+                "error_code": []
+            })
+
+
+
+        # 準備 IPT430M 數據
+        if self.ipt430m_thermal_img is not None:
+            resized_ipt430m_img = self.resize_with_aspect_ratio(self.ipt430m_thermal_img, 720, 720)
+            _, ipt430m_buffer = cv2.imencode('.jpg', resized_ipt430m_img)
+            ipt430m_encoded_img = base64.b64encode(ipt430m_buffer).decode('utf-8')
+            self.ipt430m_status_dict["thermal_img"] = ipt430m_encoded_img
+        else:
+            self.ipt430m_status_dict["thermal_img"] = None
+
+        # 準備 DS4025FT 數據
+        if self.ds4025ft_thermal_img is not None:
+            resized_ds4025ft_img = self.resize_with_aspect_ratio(self.ds4025ft_thermal_img, 720, 720)
+            _, ds4025ft_buffer = cv2.imencode('.jpg', resized_ds4025ft_img)
+            ds4025ft_encoded_img = base64.b64encode(ds4025ft_buffer).decode('utf-8')
+            self.ds4025ft_status_dict["thermal_img"] = ds4025ft_encoded_img
+        else:
+            self.ds4025ft_status_dict["thermal_img"] = None
+
+        self.ds4025ft_status_dict["error_code"] = list(self.ds4025ft_status_dict["error_code"])
+        self.ipt430m_status_dict["error_code"] = list(self.ipt430m_status_dict["error_code"])
+
+        # 發送 IPT430M 數據
         try:
-            current_time = self.get_clock().now()
-
-            self.ipt430m_status_dict["upload_time"] = ros2_time_to_taiwan_timezone(current_time).isoformat()
-            self.ds4025ft_status_dict["upload_time"] = ros2_time_to_taiwan_timezone(current_time).isoformat()
-
-            # 檢查 IPT430M 是否超時
-            if (current_time - self.last_ipt430m_update).nanoseconds / 1e9 > self.data_timeout_sec:
-                self.get_logger().error("IPT430M data timeout")
-                self.ipt430m_status_dict.update({
-                    "hot_spot_temp": None,
-                    "thermal_img": False,
-                    "error_code": [ERROR_CODE.THERMAL_IMG_ERROR, ERROR_CODE.THERMAL_HOT_SPOT_TEMP_ERROR]
-                })
-                self.ipt430m_thermal_img = None
-                self.ipt430m_thermal_hot_spot_temp = None
-            else:
-                self.ipt430m_status_dict.update({
-                    "hot_spot_temp": self.ipt430m_thermal_hot_spot_temp,
-                    "thermal_img": True,
-                    "error_code": []
-                })
-
-            # 檢查 DS4025FT 是否超時
-            if (current_time - self.last_ds4025ft_update).nanoseconds / 1e9 > self.data_timeout_sec:
-                self.get_logger().error("DS4025FT data timeout")
-                self.ds4025ft_status_dict.update({
-                    "hot_spot_temp": None,
-                    "thermal_img": False,
-                    "error_code": [ERROR_CODE.THERMAL_IMG_ERROR, ERROR_CODE.THERMAL_HOT_SPOT_TEMP_ERROR]
-                })
-                self.ds4025ft_thermal_img = None
-                self.ds4025ft_thermal_hot_spot_temp = None
-            else:
-                self.ds4025ft_status_dict.update({
-                    "hot_spot_temp": self.ds4025ft_thermal_hot_spot_temp,
-                    "thermal_img": True,
-                    "error_code": []
-                })
-
-            # 確認影像是否為 None，避免處理 None 導致的錯誤
-            if self.ds4025ft_thermal_img is not None:
-                resized_ds4025ft_img = self.resize_with_aspect_ratio(self.ds4025ft_thermal_img, 720, 720)
-                _, ds4025ft_buffer = cv2.imencode('.jpg', resized_ds4025ft_img)
-                ds4025ft_jpg_as_text = ds4025ft_buffer.tobytes()
-                files_ds4025ft = {
-                    "file": ("ds4025ft_thermal_image.jpg", ds4025ft_jpg_as_text, "image/jpeg")
-                }
-            else:
-                files_ds4025ft = {}
-
-            if self.ipt430m_thermal_img is not None:
-                resized_ipt430m_img = self.resize_with_aspect_ratio(self.ipt430m_thermal_img, 720, 720)
-                _, ipt430m_buffer = cv2.imencode('.jpg', resized_ipt430m_img)
-                ipt430m_jpg_as_text = ipt430m_buffer.tobytes()
-                files_ipt430m = {
-                    "file": ("ipt430m_thermal_image.jpg", ipt430m_jpg_as_text, "image/jpeg")
-                }
-            else:
-                files_ipt430m = {}
-
-
-            # 發送 DS4025FT 數據
-            response_ds4025ft = requests.post(
-                self.server_url,
-                files=files_ds4025ft,
-                data={**self.ds4025ft_status_dict}
-            )
-            if response_ds4025ft.status_code == 200:
-                self.get_logger().info("DS4025FT image and data uploaded successfully")
-                print_json(self.ds4025ft_status_dict)
-            else:
-                self.get_logger().error(f"Failed to upload DS4025FT: {response_ds4025ft.status_code}")
-
-            # 發送 IPT430M 數據
+            print_json(self.ipt430m_status_dict, exclude_key="thermal_img")
             response_ipt430m = requests.post(
                 self.server_url,
-                files=files_ipt430m,
-                data={**self.ipt430m_status_dict}
+                json=self.ipt430m_status_dict  # 發送 JSON
             )
             if response_ipt430m.status_code == 200:
                 self.get_logger().info("IPT430M image and data uploaded successfully")
-                print_json(self.ipt430m_status_dict)
             else:
                 self.get_logger().error(f"Failed to upload IPT430M: {response_ipt430m.status_code}")
+        except Exception as e:
+            self.get_logger().error(f"Error in send_server_callback: {e}")
 
+        # 發送 DS4025FT 數據
+        try:
+            print_json(self.ds4025ft_status_dict, exclude_key="thermal_img")
+            response_ds4025ft = requests.post(
+                self.server_url,
+                json=self.ds4025ft_status_dict  # 發送 JSON
+            )
+            if response_ds4025ft.status_code == 200:
+                self.get_logger().info("DS4025FT image and data uploaded successfully")
+            else:
+                self.get_logger().error(f"Failed to upload DS4025FT: {response_ds4025ft.status_code}")
 
         except Exception as e:
             self.get_logger().error(f"Error in send_server_callback: {e}")
+
+
+
+        # # 確認影像是否為 None，避免處理 None 導致的錯誤
+        # if self.ds4025ft_thermal_img is not None:
+        #     resized_ds4025ft_img = self.resize_with_aspect_ratio(self.ds4025ft_thermal_img, 720, 720)
+        #     _, ds4025ft_buffer = cv2.imencode('.jpg', resized_ds4025ft_img)
+        #     ds4025ft_jpg_as_text = ds4025ft_buffer.tobytes()
+        #     files_ds4025ft = {
+        #         "file": ("ds4025ft_thermal_image.jpg", ds4025ft_jpg_as_text, "image/jpeg")
+        #     }
+        # else:
+        #     files_ds4025ft = {}
+
+        # if self.ipt430m_thermal_img is not None:
+        #     resized_ipt430m_img = self.resize_with_aspect_ratio(self.ipt430m_thermal_img, 720, 720)
+        #     _, ipt430m_buffer = cv2.imencode('.jpg', resized_ipt430m_img)
+        #     ipt430m_jpg_as_text = ipt430m_buffer.tobytes()
+        #     files_ipt430m = {
+        #         "file": ("ipt430m_thermal_image.jpg", ipt430m_jpg_as_text, "image/jpeg")
+        #     }
+        # else:
+        #     files_ipt430m = {}
+
+
+
+
+
+        # try:
+        #     # 發送 DS4025FT 數據
+        #     print_json(self.ds4025ft_status_dict)
+        #     response_ds4025ft = requests.post(
+        #         self.server_url,
+        #         files=files_ds4025ft,
+        #         json={**self.ds4025ft_status_dict}
+        #     )
+        #     if response_ds4025ft.status_code == 200:
+        #         self.get_logger().info("DS4025FT image and data uploaded successfully")
+        #     else:
+        #         self.get_logger().error(f"Failed to upload DS4025FT: {response_ds4025ft.status_code}")
+        # except Exception as e:
+        #     self.get_logger().error(f"Error in send_server_callback: {e}")
+
+        # try:
+        #     # 發送 IPT430M 數據
+        #     print_json(self.ipt430m_status_dict)
+        #     response_ipt430m = requests.post(
+        #         self.server_url,
+        #         files=files_ipt430m,
+        #         json={**self.ipt430m_status_dict}
+        #     )
+        #     if response_ipt430m.status_code == 200:
+        #         self.get_logger().info("IPT430M image and data uploaded successfully")
+        #     else:
+        #         self.get_logger().error(f"Failed to upload IPT430M: {response_ipt430m.status_code}")
+        # except Exception as e:
+        #     self.get_logger().error(f"Error in send_server_callback: {e}")
+
 
 
 
@@ -244,17 +303,19 @@ def main(args=None):
 if __name__ == '__main__':
     main()
 
-    # IPT430M Status:
+    # [INFO] [1734087299.131832361] [check_thermal_camera]: DS4025FT image and data uploaded successfully
     # {
-    #     "upload_time": "2024-12-10T23:20:25.215824+08:00",
-    #     "hot_spot_temp": 20.700000762939453,
+    #     "upload_time": "2024-12-13T18:54:59.117609+08:00",
+    #     "source": "ds4025ft",
+    #     "hot_spot_temp": 25.299999237060547,
     #     "thermal_img": true,
     #     "error_code": []
     # }
-    # DS4025FT Status:
+    # [INFO] [1734087299.139642283] [check_thermal_camera]: IPT430M image and data uploaded successfully
     # {
-    #     "upload_time": "2024-12-10T23:20:25.215824+08:00",
-    #     "hot_spot_temp": 23.299999237060547,
+    #     "upload_time": "2024-12-13T18:54:59.117609+08:00",
+    #     "source": "ipt430m",
+    #     "hot_spot_temp": 14.300000190734863,
     #     "thermal_img": true,
     #     "error_code": []
     # }
