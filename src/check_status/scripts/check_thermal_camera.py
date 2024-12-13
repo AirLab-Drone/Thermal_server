@@ -171,10 +171,11 @@ class check_thermal_camera(Node):
         # 發送 IPT430M 數據
         try:
             print_json(self.ipt430m_status_dict, exclude_key="thermal_img")
-            response_ipt430m = requests.post(
-                self.server_url,
-                json=self.ipt430m_status_dict  # 發送 JSON
+            response_ipt430m = post_to_server(
+                url=self.server_url,
+                json=self.ipt430m_status_dict
             )
+    
             if response_ipt430m.status_code == 200:
                 self.get_logger().info("IPT430M image and data uploaded successfully")
             else:
@@ -185,8 +186,8 @@ class check_thermal_camera(Node):
         # 發送 DS4025FT 數據
         try:
             print_json(self.ds4025ft_status_dict, exclude_key="thermal_img")
-            response_ds4025ft = requests.post(
-                self.server_url,
+            response_ds4025ft = post_to_server(
+                url=self.server_url,
                 json=self.ds4025ft_status_dict  # 發送 JSON
             )
             if response_ds4025ft.status_code == 200:
