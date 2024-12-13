@@ -35,6 +35,7 @@ class DS4025FT_ros2_node(Node):
 
         
         self.image_pub = self.create_publisher(Image, 'thermal_image', 10)
+
         self.max_temperature_pixel_pub = self.create_publisher(Int32MultiArray, 'hot_spot_temperature_pos', 10)
         self.max_temperature_pub = self.create_publisher(Float32, 'hot_spot_temperature', 10)
 
@@ -44,20 +45,28 @@ class DS4025FT_ros2_node(Node):
 
 
     def pos_temp_callback(self):
-        max_temperature, max_temperature_pixel =  self.thermal_camera.getHostTemperatureAndPosition()
-        
+
+            max_temperature, max_temperature_pixel = self.thermal_camera.getHostTemperatureAndPosition()
+            
 
 
-        # self.get_logger().info('Max Temperature: {} Celsius'.format(max_temperature))
-        # self.get_logger().info('Max Temperature Pixel: {}'.format(max_temperature_pixel))
+            self.get_logger().info('Max Temperature: {} Celsius'.format(max_temperature))
+            self.get_logger().info('Max Temperature Pixel: {}'.format(max_temperature_pixel))
 
-        
-        self.max_temperature_pos_msg.data = [int(i) for i in max_temperature_pixel]
-        self.max_temperature_pixel_pub.publish(self.max_temperature_pos_msg)
+            
+            self.max_temperature_pos_msg.data = [int(i) for i in max_temperature_pixel]
+            self.max_temperature_pixel_pub.publish(self.max_temperature_pos_msg)
 
-        
-        self.max_temperature_msg.data = max_temperature
-        self.max_temperature_pub.publish(self.max_temperature_msg)
+            
+            self.max_temperature_msg.data = max_temperature
+            self.max_temperature_pub.publish(self.max_temperature_msg)
+        # else:
+        #     self.max_temperature_pos_msg.data = [-1, -1]
+        #     self.max_temperature_pixel_pub.publish(self.max_temperature_pos_msg)
+
+            
+        #     self.max_temperature_msg.data = -100.0
+        #     self.max_temperature_pub.publish(self.max_temperature_msg)
 
 
 

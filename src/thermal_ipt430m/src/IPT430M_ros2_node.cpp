@@ -26,6 +26,7 @@ extern "C"
 #include <dirent.h>
 #include <libudev.h>
 }
+#include <chrono>
 #include <iostream>
 #include <string>
 #include <algorithm>
@@ -57,6 +58,7 @@ static void GetIrRtsp(unsigned char *outdata, int w, int h, void *ptr);
 static void GetY16Data(short *y16, int length, void *ptr);
 cv::Mat convertY16ToGray(const short *y16Data);
 cv::Mat convertRGBToMat(const unsigned char *rgbData);
+
 
 /* ---------------------------------- 熱像儀輸出結構 ---------------------------------- */
 struct ThermalData
@@ -107,6 +109,7 @@ const int colorbar = 17;
 
 /* ---------------------------------- 全域變數 ---------------------------------- */
 ThermalData thermal_data;
+std::chrono::steady_clock::time_point last_update_time_;
 
 
 
@@ -127,16 +130,59 @@ public:
 
         timer_ = this->create_wall_timer(std::chrono::milliseconds(10), std::bind(&ThermalCameraNode::publishThermalData, this));
 
+        last_update_time_ = std::chrono::steady_clock::now();
+
     }
 
 private:
     // callback funtion
     void publishThermalData()
-    {
+    {   
+        auto last_update_seconds = std::chrono::duration_cast<std::chrono::seconds>(last_update_time_.time_since_epoch()).count();
+        auto current_time = std::chrono::steady_clock::now();
+        auto current_seconds = std::chrono::duration_cast<std::chrono::seconds>(current_time.time_since_epoch()).count();
+
+        // std::cout << "Current time: " << current_seconds << ", Last update time: " << last_update_seconds << std::endl;
+
+
+
+        if ((current_seconds - last_update_seconds) > timeout_sec_)
+        {
+
+            // 日誌警告
+            RCLCPP_WARN(this->get_logger(), "Data timeout detected. Shutting down the program.");
+
+            // 關閉 ROS 2 節點
+            rclcpp::shutdown();
+
+            // 可選：直接退出程式（非必要，因為 rclcpp::shutdown() 已處理退出邏輯）
+            std::exit(EXIT_FAILURE);
+
+            // // 數據超時，發布異常數據
+            // auto pixel_msg = std::make_unique<std_msgs::msg::Int32MultiArray>();
+            // pixel_msg->data = {-1, -1}; // 使用整數最小值標記異常
+            // pixel_pub_->publish(std::move(pixel_msg));
+
+            // auto temperature_msg = std::make_unique<std_msgs::msg::Float32>();
+            // temperature_msg->data = -100.0; // 使用浮點數最小值標記異常
+            // temperature_pub_->publish(std::move(temperature_msg));
+
+            // // 創建一個全黑圖像作為異常輸出
+            // cv::Mat RGB_img(HEIGHT, WIDTH, CV_8UC3, cv::Scalar(0, 0, 0));
+            // image_msg = cv_bridge::CvImage(std_msgs::msg::Header(), "bgr8", RGB_img).toImageMsg();
+
+            // // 發布圖像消息
+            // image_pub_->publish(*image_msg.get());
+
+            // RCLCPP_WARN(this->get_logger(), "Data timeout, publishing abnormal values.");
+            // return;
+        }
+
 
         if (thermal_data.Thermal_Y16_Image != nullptr)
         {
-
+            
+            // last_update_time_ = current_time; // 更新最新數據時間
             SGP_GetTempMatrixEx(handle_, thermal_data.TempMatrix, thermal_data.Thermal_Y16_Image, ir_model_w_, ir_model_h_);
 
             max_temperature_ = thermal_data.TempMatrix[0];
@@ -186,8 +232,6 @@ private:
                 image_pub_->publish(*image_msg.get());
                 // RCLCPP_INFO(this->get_logger(), "Thermal image is published");
             }
-
-
         }
     }
 
@@ -227,7 +271,13 @@ private:
     int ir_model_h_;
     float IRModleToRGB_x = 512.0 / 384.0;
     float IRModleToRGB_y = 384.0 / 288.0;
+
+    const double timeout_sec_ = 5.0; // 超時時間 (秒)
 };
+
+
+
+
 
 int main(int argc, char *argv[])
 {
@@ -374,7 +424,9 @@ static void GetY16Data(short *y16, int length, void *ptr)
     {
         // std::cout << length << std::endl;    // 224256
         memcpy(thermal_data.Thermal_Y16_Image, y16, length * sizeof(short));
+        last_update_time_ = std::chrono::steady_clock::now();
     }
+
 }
 
 cv::Mat convertRGBToMat(const unsigned char *rgbData)

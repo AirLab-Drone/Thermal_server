@@ -104,6 +104,10 @@ class ERROR_CODE:
     UP_SQUARE_RGB_CAMERA_ERROR = 201
     UP_SQUARE_THERMAL_CAMERA_ERROR = 202
 
+    # ------------------------------ Thermal camera ------------------------------ #
+    THERMAL_IMG_ERROR = 300
+    THERMAL_HOT_SPOT_TEMP_ERROR = 301
+
 
 
 

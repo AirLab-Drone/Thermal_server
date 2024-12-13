@@ -27,7 +27,7 @@ from std_msgs.msg import Float32
 from drone_status_msgs.srv import CheckUSBDevices
 
 from check_status_py.error_code import *
-from check_status_py.tools import send_json_to_server, ros2_time_to_taiwan_timezone
+from check_status_py.tools import post_to_server, ros2_time_to_taiwan_timezone
 
 
 
@@ -90,7 +90,7 @@ class check_UpS_status(Node):
                 up_squared_status_dict["up_squared_service"] = False
                 up_squared_status_dict["error_code"].append(ERROR_CODE.UP_SQUARE_SERVICE_ERROR)
                 up_squared_status_dict["upload_time"] = upload_time
-                send_json_to_server(url=self.__server_url, data=up_squared_status_dict)
+                post_to_server(url=self.__server_url, data=up_squared_status_dict)
 
                 self.UpSquared_disconnected_start_time = self.get_clock().now()
         else:
@@ -150,7 +150,7 @@ class check_UpS_status(Node):
             
             # print(json.dumps(up_squared_status_dict, indent=4, ensure_ascii=False))
         
-        send_json_to_server(url=self.__server_url, data=up_squared_status_dict)
+        post_to_server(url=self.__server_url, data=up_squared_status_dict)
 
         # print(response)
 

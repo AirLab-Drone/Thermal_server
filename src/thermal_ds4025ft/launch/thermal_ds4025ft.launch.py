@@ -24,16 +24,16 @@ def generate_launch_description():
             name='DS4025FT_ros2_node',
             namespace='thermal_DS4025FT',
         ),
-        TimerAction(
-            period=3.0,
-            actions=[
-                Node(
-                    package="thermal_camera2world",
-                    executable="thermal_camera2world.py",
-                    namespace="thermal_DS4025FT",
-                    name="thermal_camera_to_world",
-                    parameters=[LaunchConfiguration("thermal_camera_params_file")],
-                )
-            ],
-        ),
+        # TimerAction(
+        #     period=3.0,
+        #     actions=[
+        #         Node(
+        #             package="thermal_camera2world",
+        #             executable="thermal_camera2world.py",
+        #             namespace="thermal_DS4025FT",
+        #             name="thermal_camera_to_world",
+        #             parameters=[LaunchConfiguration("thermal_camera_params_file")],
+        #         )
+        #     ],
+        # ),
     ])

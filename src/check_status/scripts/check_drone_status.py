@@ -10,7 +10,6 @@ sudo chmod 777 /dev/ttyUSB0
 
 
 from datetime import datetime, timezone
-import pytz
 import json
 import math
 
@@ -24,7 +23,7 @@ from rclpy.duration import Duration
 
 
 from check_status_py.error_code import *
-from check_status_py.tools import send_json_to_server, check_port_exists, ros2_time_to_taiwan_timezone
+from check_status_py.tools import post_to_server, check_port_exists, ros2_time_to_taiwan_timezone
 
 
 '''
@@ -85,9 +84,8 @@ class check_Drone_status(Node):
 
     def upload_to_server_callback(self):
         try:
-            # 複製字典，避免影響原始數據
+            
             upload_drone_status = self.drone_status_dict.copy()
-    
 
             new_errors = self.check_drone_status(upload_drone_status)
             upload_drone_status["error_code"] = upload_drone_status["error_code"].union(new_errors)
@@ -105,7 +103,7 @@ class check_Drone_status(Node):
             print(json_data)
 
             # 將資料發送到伺服器
-            send_json_to_server(url=self.__server_url, data=json_data)
+            post_to_server(url=self.__server_url, data=json_data)
 
         except Exception as e:
             self.get_logger().error(f"轉換為 JSON 格式時發生錯誤: {e}")
@@ -272,41 +270,6 @@ class check_Drone_status(Node):
         return error_list_set
         
 
-        # # gps hdop check
-        # if status["gps_hdop"] == UINT16_MAX or status["gps_hdop"] > 100:
-        #     self.MavLink_error_code_list.append(ERROR_CODE.GPS_HDOP_ERROR)
-        #     self.get_logger().error(f"GPS HDOP 過高: {status['gps_hdop']/100}")
-
-        # # gps_satellites_visible check, only have 4 UWB
-        # if status["gps_satellites_visible"] == UINT8_MAX or status["gps_satellites_visible"] < 4:
-        #     self.MavLink_error_code_list.append(ERROR_CODE.GPS_SATELLITES_VISIBLE_ERROR)
-        #     self.get_logger().error(f"可見衛星數量過少: {status['gps_satellites_visible']}")
-
-        # # drone attitude check
-        # if abs(math.degrees(status["attitude_roll"])) > 15:
-        #     self.MavLink_error_code_list.append(ERROR_CODE.ATTITUDE_ROLL_ERROR)
-        #     self.get_logger().error(f"Roll 角度過大: {math.degrees(status['attitude_roll'])}")
-
-        # if abs(math.degrees(status["attitude_pitch"])) > 15:
-        #     self.MavLink_error_code_list.append(ERROR_CODE.ATTITUDE_PITCH_ERROR)
-        #     self.get_logger().error(f"Pitch 角度過大: {math.degrees(status['attitude_pitch'])}")
-
-        # # motor output check
-        # for i in range(1, 7):
-        #     if status[f"servo_output_{i}"] < 1000 or status[f"servo_output_{i}"] > 2000:
-        #         self.MavLink_error_code_list.append(ERROR_CODE.MOTOR_OUTPUTS_ERROR)
-        #         self.get_logger().error(f"馬達 {i} 輸出異常: {status[f'servo_output_{i}']}")
-
-        # # if status["range_finder"] :
-
-
-        # status["error_code"] = self.MavLink_error_code_list
-
-        # send_json_to_server(url=self.__server_url, data=status)
-
-        # # print(json.dumps(self.drone_status_dict, indent=4, ensure_ascii=False))
-        # # print(self.error_code_list)
-            
 
 
         
@@ -357,22 +320,31 @@ if __name__ == '__main__':
     main()
     # print(len(sensor_flags))
     {
-    "sensor_health": 1467088239,
-    "battery_voltage": 46104,
-    "battery_current": 158,
-    "battery_remaining": 56,
-    "gps_hdop": 30,
-    "gps_satellites_visible": 4,
-    "attitude_roll": -0.008461258374154568,
-    "attitude_pitch": 0.018391260877251625,
-    "attitude_yaw": 1.9347625970840454,
-    "servo_output_1": 1000,
-    "servo_output_2": 1000,
-    "servo_output_3": 1000,
-    "servo_output_4": 1000,
-    "servo_output_5": 1000,
-    "servo_output_6": 1000,
-    "error_code": None
+        "upload_time": "2024-11-21T20:30:26.209132+08:00",
+        "mavlink_status": "is_connected",
+        "sensor_health": 1198562607,
+        "battery_voltage": 50233,
+        "battery_current": 148,
+        "battery_remaining": 93,
+        "gps_hdop": 255,
+        "gps_satellites_visible": 0,
+        "attitude_roll": -0.019706612452864647,
+        "attitude_pitch": 0.003123760223388672,
+        "attitude_yaw": 1.3226935863494873,
+        "servo_output_1": 1000,
+        "servo_output_2": 1000,
+        "servo_output_3": 1000,
+        "servo_output_4": 1000,
+        "servo_output_5": 1000,
+        "servo_output_6": 1000,
+        "error_code": [
+            128,
+            113,
+            114,
+            132,
+            133,
+            116
+        ]
     }
 
 

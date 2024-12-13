@@ -41,16 +41,16 @@ def generate_launch_description():
             namespace='thermal_IPT430M',
         ),
 
-        TimerAction(
-            period=3.0,
-            actions=[
-                Node(
-                    package="thermal_camera2world",
-                    executable="thermal_camera2world.py",
-                    namespace="thermal_IPT430M",
-                    name="thermal_camera_to_world",
-                    parameters=[LaunchConfiguration("thermal_camera_params_file")],
-                )
-            ],
-        ),
+        # TimerAction(
+        #     period=3.0,
+        #     actions=[
+        #         Node(
+        #             package="thermal_camera2world",
+        #             executable="thermal_camera2world.py",
+        #             namespace="thermal_IPT430M",
+        #             name="thermal_camera_to_world",
+        #             parameters=[LaunchConfiguration("thermal_camera_params_file")],
+        #         )
+        #     ],
+        # ),
     ])

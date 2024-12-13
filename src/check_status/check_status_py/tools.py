@@ -6,22 +6,23 @@ import requests
 import os
 
 
-def send_json_to_database(url, data):
+
+
+def post_to_server(url=None, file=None, data=None, json=None):
     """
     @param url: url
-    @param data: json data
+    @param file: file
+    @param data: data
     @return: response
     """
-    url = ""
-    return requests.post(url, json=data)
+    return requests.post(url, files=file, data=data, json=json)
 
 
-# TODO:上傳失敗的錯誤處理
-def send_json_to_server(url, data):
-    # print(f"send_json_to_server {url}")
-    # print(data)
-    # print(json.dumps(data, indent=4, ensure_ascii=False))
-    pass
+def print_json(data):
+    """
+    @param data: data
+    """
+    print(json.dumps(data, indent=4))
 
 
 def check_port_exists(port):
