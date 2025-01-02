@@ -101,7 +101,7 @@ struct ThermalData
 const int WIDTH = 512;
 const int HEIGHT = 384;
 // const int SIZE = WIDTH * HEIGHT; // =196608
-const char *server = "192.168.1.168";
+const char *server = "192.168.112.69";
 const char *username = "admin";
 const char *password = "admin123";
 const int port = 80;
@@ -281,6 +281,7 @@ private:
 
 int main(int argc, char *argv[])
 {
+
 
     int ret = 0;
     SGP_HANDLE handle = 0;

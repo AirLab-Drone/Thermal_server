@@ -20,7 +20,7 @@ class DS4025FT_ros2_node(Node):
         
         self.account = "admin"
         self.password = "admin"
-        self.ip_address = "192.168.1.108"
+        self.ip_address = "192.168.112.87"
 
 
         self.thermal_camera = Thermal_DS4025FT(ip_address=self.ip_address, account=self.account, password=self.password)

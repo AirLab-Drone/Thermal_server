@@ -70,6 +70,7 @@ class Thermal_camera_to_world(Node):
         self.cv_bridge = CvBridge()
         self.thermal_image = None
         self.thermal_image_debug = None
+        self.scale_factor = 1.0
 
         # --------------------------- Hot spot temperature --------------------------- #
         self.sub_hot_spot_temperature = self.create_subscription(
@@ -97,20 +98,6 @@ class Thermal_camera_to_world(Node):
 
         self.detcet_fire_time = None
 
-    def SelectFourConerCallback(self, event, x, y, flags, param) -> None:
-        # add the point to the list if you click left button
-        if event == cv2.EVENT_LBUTTONDOWN:
-            if self.four_coner_points.__len__() >= 4:
-                print("You have already selected all the coner points.")
-                print(self.four_coner_points)
-                return
-            print("Clicked at pixel coordinates (x={}, y={})".format(x, y))
-            self.four_coner_points.append((x, y))
-
-        # delete the last point if you click right button
-        elif event == cv2.EVENT_RBUTTONDOWN:
-            if self.four_coner_points:
-                self.four_coner_points.pop()
 
 
     def hot_spot_pixel_callback(self, msg) -> None:
@@ -177,10 +164,117 @@ class Thermal_camera_to_world(Node):
         if len(points) == 4:
             cv2.line(image, points[0], points[3], color, width)
 
+
+    # def thermal_image_callback(self, msg) -> None:
+    #     # ----------------------- ros2 image topic to cv2 image ---------------------- #
+    #     self.thermal_image = self.cv_bridge.imgmsg_to_cv2(
+    #         msg, desired_encoding="passthrough"
+    #     )
+        
+    #     height, width = self.thermal_image.shape[:2]
+
+    #     # # 根據影像尺寸決定縮放比例
+    #     if height > 1000 or width > 1000:
+    #         self.scale_factor = 0.8
+    #     else:
+    #         self.scale_factor = 1.0
+
+    #     # 縮小影像進行顯示
+    #     self.thermal_image_debug = cv2.resize(
+    #         self.thermal_image,
+    #         (int(width * self.scale_factor), int(height * self.scale_factor))
+    #     )
+
+    #     # ---------------------------- 加回滑鼠事件監聽器 ---------------------------- #
+    #     cv2.namedWindow(self.thermal_debug_image_window_name)
+    #     # cv2.namedWindow(self.thermal_origin_image_window_name, cv2.WINDOW_GUI_NORMAL)
+    #     cv2.setMouseCallback(
+    #         self.thermal_debug_image_window_name, self.SelectFourConerCallback
+    #     )
+    #     # ------------------------------------------------------------------------ #
+
+    #     # 將熱點像素也縮放到對應的比例
+    #     hot_spot_pixel_scaled = (int(self.hot_spot_pixel[0] * self.scale_factor),
+    #                             int(self.hot_spot_pixel[1] * self.scale_factor))
+
+    #     self.DrawPoints(self.thermal_image_debug, [hot_spot_pixel_scaled], BLUE)
+    #     # self.DrawPoints(self.thermal_image_debug, [self.hot_spot_pixel], BLUE)
+
+    #     if self.four_coner_points:
+    #         scaled_points = [(int(x * self.scale_factor), int(y * self.scale_factor)) for x, y in self.four_coner_points]
+    #         self.DrawPoints(self.thermal_image_debug, scaled_points, RED)
+    #         self.DrawLine(self.thermal_image_debug, scaled_points, ORANGE, 1)
+
+    #     cv2.imshow(self.thermal_debug_image_window_name, self.thermal_image_debug)
+    #     # cv2.imshow(self.thermal_origin_image_window_name, self.thermal_image)
+
+    #     # 如果四個點都選擇完畢，回推到原始解析度進行計算
+    #     if len(self.four_coner_points) == 4:
+    #         # 將選擇的點縮放回原始尺寸
+    #         selected_area = np.array([(x / self.scale_factor, y / self.scale_factor) for x, y in self.four_coner_points],
+    #                                 dtype=np.float32)
+
+    #         world_upper_left = (
+    #             self.get_parameter("World_UpperLeft")
+    #             .get_parameter_value()
+    #             .double_array_value
+    #         )
+    #         world_upper_right = (
+    #             self.get_parameter("World_UpperRight")
+    #             .get_parameter_value()
+    #             .double_array_value
+    #         )
+    #         world_lower_right = (
+    #             self.get_parameter("World_LowerRight")
+    #             .get_parameter_value()
+    #             .double_array_value
+    #         )
+    #         world_lower_left = (
+    #             self.get_parameter("World_LowerLeft")
+    #             .get_parameter_value()
+    #             .double_array_value
+    #         )
+
+    #         target_area = np.array(
+    #             [world_upper_left, world_upper_right, world_lower_right, world_lower_left],
+    #             dtype=np.float32,
+    #         )
+
+    #         h, _ = cv2.findHomography(selected_area, target_area)
+
+    #         point = np.array(self.hot_spot_pixel, dtype=np.float32).reshape(-1, 1, 2)
+    #         corrected_point = cv2.perspectiveTransform(point, h)
+
+    #         self.world_coordinate_x, self.world_coordinate_y = corrected_point[0][0]
+
+    #     cv2.waitKey(1)
+
+
+    # def SelectFourConerCallback(self, event, x, y, flags, param) -> None:
+    #     # 根據縮放比例將點擊座標還原
+    #     x_original = int(x / self.scale_factor)
+    #     y_original = int(y / self.scale_factor)
+
+    #     # add the point to the list if you click left button
+    #     if event == cv2.EVENT_LBUTTONDOWN:
+    #         if len(self.four_coner_points) >= 4:
+    #             print("You have already selected all the corner points.")
+    #             print(self.four_coner_points)
+    #             return
+    #         print("Clicked at pixel coordinates (x={}, y={})".format(x_original, y_original))
+    #         self.four_coner_points.append((x_original, y_original))
+
+    #     # delete the last point if you click right button
+    #     elif event == cv2.EVENT_RBUTTONDOWN:
+    #         if self.four_coner_points:
+    #             self.four_coner_points.pop()
+
+
+
     def thermal_image_callback(self, msg) -> None:
 
         # ---------------------------- add mouse listener ---------------------------- #
-        cv2.namedWindow(self.thermal_debug_image_window_name)
+        cv2.namedWindow(self.thermal_debug_image_window_name, cv2.WINDOW_NORMAL)
         cv2.setMouseCallback(
             self.thermal_debug_image_window_name, self.SelectFourConerCallback
         )
@@ -250,6 +344,23 @@ class Thermal_camera_to_world(Node):
             # print(f"Corrected point: {self.world_coordinate_x:.2f}, {self.world_coordinate_y:.2f}")
 
         cv2.waitKey(1)
+
+
+    def SelectFourConerCallback(self, event, x, y, flags, param) -> None:
+        # add the point to the list if you click left button
+        if event == cv2.EVENT_LBUTTONDOWN:
+            if self.four_coner_points.__len__() >= 4:
+                print("You have already selected all the coner points.")
+                print(self.four_coner_points)
+                return
+            print("Clicked at pixel coordinates (x={}, y={})".format(x, y))
+            self.four_coner_points.append((x, y))
+
+        # delete the last point if you click right button
+        elif event == cv2.EVENT_RBUTTONDOWN:
+            if self.four_coner_points:
+                self.four_coner_points.pop()
+
 
 
 def main(args=None):
