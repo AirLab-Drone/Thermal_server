@@ -50,8 +50,8 @@ class DS4025FT_ros2_node(Node):
             
 
 
-            self.get_logger().info('Max Temperature: {} Celsius'.format(max_temperature))
-            self.get_logger().info('Max Temperature Pixel: {}'.format(max_temperature_pixel))
+            # self.get_logger().info('Max Temperature: {} Celsius'.format(max_temperature))
+            # self.get_logger().info('Max Temperature Pixel: {}'.format(max_temperature_pixel))
 
             
             self.max_temperature_pos_msg.data = [int(i) for i in max_temperature_pixel]
