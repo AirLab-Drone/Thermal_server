@@ -98,6 +98,8 @@ class Thermal_camera_to_world(Node):
 
         cv2.namedWindow(self.thermal_debug_image_window_name, cv2.WINDOW_NORMAL)
 
+        self.detcet_fire_time = None
+
 
     def hot_spot_pixel_callback(self, msg) -> None:
         self.hot_spot_pixel = [msg.data[0], msg.data[1]]
@@ -216,6 +218,9 @@ class Thermal_camera_to_world(Node):
         self.DrawPoints(self.thermal_image_debug, [self.hot_spot_pixel], BLUE)
         self.DrawPoints(self.thermal_image_debug, selected_area.astype(np.int32).tolist(), RED)
         self.DrawLine(self.thermal_image_debug, selected_area.astype(np.int32).tolist(), ORANGE, 1)
+
+
+        self.get_logger().info(f'{self.world_coordinate_x:.2f}, {self.world_coordinate_y:.2f}')
 
 
         cv2.imshow(self.thermal_debug_image_window_name, self.thermal_image_debug)
