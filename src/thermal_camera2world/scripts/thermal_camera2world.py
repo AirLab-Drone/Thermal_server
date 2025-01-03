@@ -135,9 +135,8 @@ class Thermal_camera_to_world(Node):
 
                 if delta_time > Duration(seconds=alert_waiting_time):
                     self.pub_thermal_alert.publish(self.thermal_alert)
-                    print(f"[Info] Published thermal alert!")
-                    print(f"[Info] World coordinate: [x: {self.world_coordinate_x:.2f}, y: {self.world_coordinate_y:.2f}]")
-                    print(f"[Info] Temperature: {self.hot_spot_temperature:.2f}")
+                    self.get_logger().info(f'x: {self.world_coordinate_x:.2f}, y: {self.world_coordinate_y:.2f}')
+                    self.get_logger().info(f'溫度: {self.hot_spot_temperature:.2f}')
         else:
             self.detcet_fire_time = None
 
@@ -220,7 +219,7 @@ class Thermal_camera_to_world(Node):
         self.DrawLine(self.thermal_image_debug, selected_area.astype(np.int32).tolist(), ORANGE, 1)
 
 
-        self.get_logger().info(f'{self.world_coordinate_x:.2f}, {self.world_coordinate_y:.2f}')
+
 
 
         cv2.imshow(self.thermal_debug_image_window_name, self.thermal_image_debug)
