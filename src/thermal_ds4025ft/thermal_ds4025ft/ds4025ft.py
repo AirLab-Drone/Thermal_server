@@ -140,8 +140,12 @@ class Thermal_DS4025FT():
         max_temp = float(max_temp / 10.0) # 轉成攝氏溫度
         max_temp_position = np.unravel_index(np.argmax(self.IRData), self.IRData.shape) # [y, x]
         max_temp_position = [max_temp_position[1], max_temp_position[0]] # [x, y]
+        RGB_max_temp_position = (
+            max_temp_position[0] / self.__IRWidth * self.__Width,
+            max_temp_position[1] / self.__IRHeight * self.__Height,
+        )  # [x, y] IR -> RGB
         
-        return max_temp, max_temp_position
+        return max_temp, RGB_max_temp_position
         
     def getThermalStream(self, channel: int = 2, subtype: int = 0) -> cv2.VideoCapture|bool:
         """
@@ -166,7 +170,7 @@ class Thermal_DS4025FT():
 if __name__ == "__main__":
     account = "admin"
     password = "admin"
-    ip_address = "192.168.1.108"
+    ip_address = "192.168.112.87"
     thermalCamera = Thermal_DS4025FT(ip_address=ip_address, account=account, password=password)
     # thermalCamera.setHeatMapFormat(format="IR-SGCC-FIR64")
     # thermalCamera.getHeatMap()

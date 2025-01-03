@@ -8,6 +8,9 @@ When run this script, you need to caibrate the camera 4 coner points and their c
 
 import cv2
 import numpy as np
+import threading
+import time
+import os
 
 import rclpy
 from rclpy.parameter import Parameter
@@ -43,20 +46,26 @@ class Thermal_camera_to_world(Node):
         self.get_logger().info(f"Current namespace: {self.current_namespace}")
 
         # -------------------------------- Parameters -------------------------------- #
-        # 世界座標四個角點
+        # This parameter is used to set the four corner points of the world coordinate
         self.declare_parameter("World_UpperLeft", [0.0, 0.0])
         self.declare_parameter("World_UpperRight", [1.0, 5.0])
         self.declare_parameter("World_LowerRight", [45.0, 0.0])
         self.declare_parameter("World_LowerLeft", [0.0, 6.0])
 
-        # 像素座標四個角點
-        self.declare_parameter("Thermal_UpperLeft", [0, 0])
-        self.declare_parameter("Thermal_UpperRight", [0, 0])
-        self.declare_parameter("Thermal_LowerRight", [0, 0])
-        self.declare_parameter("Thermal_LowerLeft", [0, 0])
+        self.declare_parameter("Thermal_UpperLeft", [0.0, 0.0])
+        self.declare_parameter("Thermal_UpperRight", [0.0, 0.0])
+        self.declare_parameter("Thermal_LowerRight", [0.0, 0.0])
+        self.declare_parameter("Thermal_LowerLeft", [0.0, 0.0])
+    
 
         self.declare_parameter("Threshold_Temperature", 80.0)
         self.declare_parameter("Alert_Waiting_Time", 5)
+
+
+
+
+        # self.get_logger().info(f'Threshold_Temperature: {self.get_parameter("Threshold_Temperature").get_parameter_value().double_value}')
+
 
         # ------------- Republish World Coordinate and Hot Spot Temperature ------------ #
         self.pub_thermal_alert = self.create_publisher(
@@ -96,15 +105,19 @@ class Thermal_camera_to_world(Node):
         self.thermal_origin_image_window_name = "Thermal Image"
         self.thermal_debug_image_window_name = "Thermal Image Debug"
 
-        cv2.namedWindow(self.thermal_debug_image_window_name, cv2.WINDOW_NORMAL)
+        # ---------------- four pixel coordinate of the thermal image ---------------- #
+        self.four_coner_points = []
 
         self.detcet_fire_time = None
+
 
 
     def hot_spot_pixel_callback(self, msg) -> None:
         self.hot_spot_pixel = [msg.data[0], msg.data[1]]
 
+
     def hot_spot_temperature_callback(self, msg) -> None:
+
         threshold_temperature = (
             self.get_parameter("Threshold_Temperature")
             .get_parameter_value()
@@ -122,8 +135,10 @@ class Thermal_camera_to_world(Node):
         self.thermal_alert.temperature = self.hot_spot_temperature
         self.thermal_alert.x = float(self.world_coordinate_x)
         self.thermal_alert.y = float(self.world_coordinate_y)
+        if (self.hot_spot_temperature > threshold_temperature) and (
+            self.four_coner_points.__len__() == 4
+        ):
 
-        if self.hot_spot_temperature > threshold_temperature:
             if not self.detcet_fire_time:
                 self.detcet_fire_time = Clock().now()
                 print(f"[Info] Didn't Detect Fire...")
@@ -133,23 +148,46 @@ class Thermal_camera_to_world(Node):
                     f"[Info] Detect Fire! in {delta_time.nanoseconds/1e9:.2f} seconds"
                 )
 
+
                 if delta_time > Duration(seconds=alert_waiting_time):
+
                     self.pub_thermal_alert.publish(self.thermal_alert)
-                    self.get_logger().info(f'x: {self.world_coordinate_x:.2f}, y: {self.world_coordinate_y:.2f}')
-                    self.get_logger().info(f'溫度: {self.hot_spot_temperature:.2f}')
+                    print(f"[Info] Pubilc thermal alert!")
+                    print(f"[Info] World coordinate: [x: {self.world_coordinate_x:.2f}, y: {self.world_coordinate_y:.2f}]")
+                    print(f"[Info] Temperature:{self.hot_spot_temperature:.2f}")
+                
         else:
             self.detcet_fire_time = None
 
+    def DrawPoints(
+        self, image: cv2.Mat, points: list, color: tuple, radius: int = -1
+    ) -> None:
+        for point in points:
+            cv2.circle(image, point, 3, color, radius)
+
+
+    def DrawLine(
+        self, image: cv2.Mat, points: list, color: tuple, width: int = 2
+    ) -> None:
+        if len(points) < 2:
+            return
+        for i in range(len(points) - 1):
+            cv2.line(image, points[i], points[i + 1], color, width)
+        if len(points) == 4:
+            cv2.line(image, points[0], points[3], color, width)
+
+
+
     def thermal_image_callback(self, msg) -> None:
 
-        self.thermal_image = self.cv_bridge.imgmsg_to_cv2(
-            msg, desired_encoding="passthrough"
+        # ---------------------------- add mouse listener ---------------------------- #
+        cv2.namedWindow(self.thermal_debug_image_window_name, cv2.WINDOW_NORMAL)
+        cv2.setMouseCallback(
+            self.thermal_debug_image_window_name, self.SelectFourConerCallback
         )
 
-        self.thermal_image_debug = self.thermal_image.copy()
-
-
-        # 讀取參數
+        # ------------------------- get four corner world coodinate ------------------------- #
+        # type is double array [x, y]
         world_upper_left = (
             self.get_parameter("World_UpperLeft")
             .get_parameter_value()
@@ -170,78 +208,67 @@ class Thermal_camera_to_world(Node):
             .get_parameter_value()
             .double_array_value
         )
-        thermal_upper_left = (
-            self.get_parameter("Thermal_UpperLeft")
-            .get_parameter_value()
-            .integer_array_value
-        )
-        thermal_upper_right = (
-            self.get_parameter("Thermal_UpperRight")
-            .get_parameter_value()
-            .integer_array_value
-        )
-        thermal_lower_right = (
-            self.get_parameter("Thermal_LowerRight")
-            .get_parameter_value()
-            .integer_array_value
-        )
-        thermal_lower_left = (
-            self.get_parameter("Thermal_LowerLeft")
-            .get_parameter_value()
-            .integer_array_value
+        # print(upper_left, upper_right, lower_right, lower_left)
+
+        # ----------------------- ros2 image topic to cv2 image ---------------------- #
+        self.thermal_image = self.cv_bridge.imgmsg_to_cv2(
+            msg, desired_encoding="passthrough"
         )
 
-        target_area = np.array(
-            [world_upper_left, world_upper_right, world_lower_right, world_lower_left],
-            dtype=np.float32,
-        )
-        selected_area = np.array(
-            [
-                thermal_upper_left,
-                thermal_upper_right,
-                thermal_lower_right,
-                thermal_lower_left,
-            ],
-            dtype=np.float32,
-        )
-        # self.get_logger().info(f"{target_area}, {selected_area}")
-
-        h, _ = cv2.findHomography(selected_area, target_area)  # numpy array
-
-        # 將熱點像素座標轉換到世界座標
-        point = np.array(self.hot_spot_pixel, dtype=np.float32)
-        corrected_point = cv2.perspectiveTransform(point.reshape(-1, 1, 2), h)
-
-        self.world_coordinate_x, self.world_coordinate_y = corrected_point[0][0]
+        self.thermal_image_debug = self.thermal_image.copy()
 
         self.DrawPoints(self.thermal_image_debug, [self.hot_spot_pixel], BLUE)
-        self.DrawPoints(self.thermal_image_debug, selected_area.astype(np.int32).tolist(), RED)
-        self.DrawLine(self.thermal_image_debug, selected_area.astype(np.int32).tolist(), ORANGE, 1)
 
-
-
-
+        if self.four_coner_points:
+            self.DrawPoints(self.thermal_image_debug, self.four_coner_points, RED)
+            self.DrawLine(self.thermal_image_debug, self.four_coner_points, ORANGE, 1)
 
         cv2.imshow(self.thermal_debug_image_window_name, self.thermal_image_debug)
 
+        if self.four_coner_points.__len__() == 4:
+            target_area = np.array(
+                [
+                    world_upper_left,
+                    world_upper_right,
+                    world_lower_right,
+                    world_lower_left,
+                ],
+                dtype=np.float32,
+            )
+            selected_area = np.array(self.four_coner_points, dtype=np.float32)
+
+            h, _ = cv2.findHomography(selected_area, target_area)  # numpy array
+
+            # corrected_area = cv2.warpPerspective(self.cv_thermal_image, h, (1000, 800))
+
+            point = np.array(self.hot_spot_pixel, dtype=np.float32)
+            # 將點進行轉換
+            corrected_point = cv2.perspectiveTransform(point.reshape(-1, 1, 2), h)
+
+            # 提取轉換後的座標
+            self.world_coordinate_x, self.world_coordinate_y = corrected_point[0][0]
+
+            # print(f"Corrected point: {self.world_coordinate_x:.2f}, {self.world_coordinate_y:.2f}")
+
         cv2.waitKey(1)
 
-    def DrawPoints(
-        self, image: cv2.Mat, points: list, color: tuple, radius: int = -1
-    ) -> None:
-        for point in points:
-            cv2.circle(image, point, 3, color, radius)
+
+    def SelectFourConerCallback(self, event, x, y, flags, param) -> None:
+        # add the point to the list if you click left button
+        if event == cv2.EVENT_LBUTTONDOWN:
+            if self.four_coner_points.__len__() >= 4:
+                print("You have already selected all the coner points.")
+                print(self.four_coner_points)
+                return
+            print("Clicked at pixel coordinates (x={}, y={})".format(x, y))
+            self.four_coner_points.append((x, y))
+
+        # delete the last point if you click right button
+        elif event == cv2.EVENT_RBUTTONDOWN:
+            if self.four_coner_points:
+                self.four_coner_points.pop()
 
 
-    def DrawLine(
-        self, image: cv2.Mat, points: list, color: tuple, width: int = 2
-    ) -> None:
-        if len(points) < 2:
-            return
-        for i in range(len(points) - 1):
-            cv2.line(image, points[i], points[i + 1], color, width)
-        if len(points) == 4:
-            cv2.line(image, points[0], points[3], color, width)
 
 def main(args=None):
     rclpy.init(args=args)
@@ -250,6 +277,7 @@ def main(args=None):
 
     thermal_camera2world.destroy_node()
     rclpy.shutdown()
+    cv2.destroyAllWindows()
 
 
 if __name__ == "__main__":

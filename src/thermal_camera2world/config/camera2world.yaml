@@ -1,20 +1,56 @@
-# ros2 param load /thermal_camera_to_world /home/yuan/server_ws/src/thermal_camera2world/config/camera2world.yaml
-
-
 /thermal_DS4025FT/thermal_camera_to_world:
   ros__parameters:
-    World_UpperLeft: [3.74, 4.62]
-    World_UpperRight: [4.06, 4.06]
-    World_LowerRight: [3.06, 4.0]
-    World_LowerLeft: [1.59, 5.32]
-    Threshold_Temperature: 60.0
     Alert_Waiting_Time: 5
-
+    Thermal_LowerLeft:
+    - 1028
+    - 34
+    Thermal_LowerRight:
+    - 1226
+    - 929
+    Thermal_UpperLeft:
+    - 116
+    - 337
+    Thermal_UpperRight:
+    - 365
+    - 959
+    Threshold_Temperature: 80.0
+    World_LowerLeft:
+    - 9.0
+    - 6.0
+    World_LowerRight:
+    - 8.0
+    - 9.0
+    World_UpperLeft:
+    - 5.0
+    - 5.0
+    World_UpperRight:
+    - 6.0
+    - 8.0
 /thermal_IPT430M/thermal_camera_to_world:
   ros__parameters:
-    World_UpperLeft: [1.5, 2.75]
-    World_UpperRight: [2.1, 4.9]
-    World_LowerRight: [3.6, 4.3]
-    World_LowerLeft: [3.1, 4.1]
-    Threshold_Temperature: 60.0
     Alert_Waiting_Time: 5
+    Thermal_LowerLeft:
+    - 317
+    - 115
+    Thermal_LowerRight:
+    - 29
+    - 98
+    Thermal_UpperLeft:
+    - 488
+    - 344
+    Thermal_UpperRight:
+    - 89
+    - 371
+    Threshold_Temperature: 80.0
+    World_LowerLeft:
+    - 11.0
+    - 9.0
+    World_LowerRight:
+    - 7.0
+    - 18.0
+    World_UpperLeft:
+    - 5.0
+    - 1.0
+    World_UpperRight:
+    - 1.0
+    - 5.0
