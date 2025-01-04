@@ -66,8 +66,13 @@ class CheckDroneStatus(Node):
         #                      time(4, 0)]
         
 
-        # 每小時檢查一次
-        self.target_times = [time(hour, 0) for hour in range(1, 24)]
+        # 每小時發送
+        # self.target_times = [time(hour, 0) for hour in range(1, 24)]
+        
+        # 每分鐘發送 (Demo 用)
+        self.target_times = [time(hour, minute) for hour in range(0, 24) for minute in range(0, 60)]
+        
+
 
 
 
@@ -101,7 +106,7 @@ class CheckDroneStatus(Node):
                 self.get_logger().error(f"上傳失敗: {upload_drone_status}")
 
         except Exception as e:
-            self.get_logger().error(f"{e}")
+            self.get_logger().error(f"上傳失敗: {e}")
 
     def check_mavlink_connection(self):
         self.drone_status_dict["upload_time"] = ros2_time_to_taiwan_timezone(self.get_clock().now())
