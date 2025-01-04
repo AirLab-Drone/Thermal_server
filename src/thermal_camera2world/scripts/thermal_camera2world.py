@@ -99,6 +99,7 @@ class Thermal_camera_to_world(Node):
         cv2.namedWindow(self.thermal_debug_image_window_name, cv2.WINDOW_NORMAL)
 
         self.detcet_fire_time = None
+        self.last_logged_time = Clock().now()
 
 
     def hot_spot_pixel_callback(self, msg) -> None:
@@ -122,11 +123,21 @@ class Thermal_camera_to_world(Node):
         self.thermal_alert.temperature = self.hot_spot_temperature
         self.thermal_alert.x = float(self.world_coordinate_x)
         self.thermal_alert.y = float(self.world_coordinate_y)
+        
+
+        current_time = Clock().now()
+        # 計算時間差 (轉換成秒)
+        time_difference = current_time - self.last_logged_time
+        # 每秒記錄一次
+        if time_difference >= Duration(seconds=3):
+            self.get_logger().info(f"Hot Spot Temperature: {self.hot_spot_temperature:.2f}")
+            self.last_logged_time = current_time
+
 
         if self.hot_spot_temperature > threshold_temperature:
             if not self.detcet_fire_time:
                 self.detcet_fire_time = Clock().now()
-                print(f"[Info] Didn't Detect Fire...")
+                # print(f"[Info] Didn't Detect Fire...")
             else:
                 delta_time = Clock().now() - self.detcet_fire_time
                 self.get_logger().info(
