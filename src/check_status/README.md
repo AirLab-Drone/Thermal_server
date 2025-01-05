@@ -40,3 +40,12 @@ sudo udevadm trigger
 
 
 這樣，每次插入該 USB 設備，系統都會將它綁定到 /dev/drone_usb，無論它實際分配到的名稱是 /dev/ttyUSB0 還是 /dev/ttyUSB1
+
+
+## 發送警報(email) 設定
+mailjet api key
+```
+echo "export MAILJET_API_KEY='your_api_key'" >> ~/.bashrc
+echo "export MAILJET_API_SECRET='your_secret_key'" >> ~/.bashrc
+source ~/.bashrc
+```
