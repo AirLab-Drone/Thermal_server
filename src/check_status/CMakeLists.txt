@@ -22,14 +22,13 @@ install(PROGRAMS
   scripts/check_thermal_camera.py
   scripts/check_drone_status.py
   scripts/check_UpS_status.py
+  scripts/send_fire_alert.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
 
-
-
 install(DIRECTORY
-
+  launch
   DESTINATION share/${PROJECT_NAME}/
 )
 

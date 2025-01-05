@@ -18,6 +18,11 @@ This is respository for the thermal server project. It use robot operating syste
 pip install opencv-python pymavlink
 ```
 
+發送email
+```
+pip install mailjet_rest
+```
+
 
 
 ### How to use
