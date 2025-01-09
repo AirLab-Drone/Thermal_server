@@ -124,7 +124,7 @@ class SetupCamera2WorldPoint(Node):
                     "Thermal_UpperRight": list(pixel_points[1]),
                     "Thermal_LowerRight": list(pixel_points[2]),
                     "Thermal_LowerLeft": list(pixel_points[3]),
-                    "Threshold_Temperature": 80.0,
+                    "Threshold_Temperature": 60.0,
                     "Alert_Waiting_Time": 5,
                 }
             }
