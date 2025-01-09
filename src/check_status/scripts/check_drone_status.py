@@ -59,6 +59,8 @@ class CheckDroneStatus(Node):
         self.master = None
         self.mavlink_status = None
 
+        self.check_mavlink_connection()
+
         # 指定的上傳時間
         # self.target_times = [time(1, 0), 
         #                      time(2, 0), 
@@ -86,7 +88,9 @@ class CheckDroneStatus(Node):
 
     def perform_check_and_upload(self):
         try:
-            self.check_mavlink_connection()
+            if not self.master or self.mavlink_status != 'is_connected':
+                self.check_mavlink_connection()
+                
             upload_drone_status = self.drone_status_dict.copy()
             new_errors = self.check_drone_status(upload_drone_status)
             upload_drone_status["error_code"] = upload_drone_status["error_code"].union(new_errors)

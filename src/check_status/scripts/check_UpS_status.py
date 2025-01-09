@@ -1,12 +1,5 @@
 #!/usr/bin/env python3
 
-'''
-確認無線電的usb port
-ls /dev/ttyUSB*
-
-給權限
-sudo chmod 777 /dev/ttyUSB0
-'''
 
 import copy
 from datetime import datetime, timezone

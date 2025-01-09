@@ -15,7 +15,7 @@ This is respository for the thermal server project. It use robot operating syste
 
 ### 安裝包
 ```
-pip install opencv-python pymavlink
+pip install opencv-python pymavlink pyserial
 ```
 
 發送email

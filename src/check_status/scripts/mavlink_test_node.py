@@ -9,7 +9,7 @@ class MavlinkHeartbeatMonitor(Node):
     def __init__(self):
         super().__init__('mavlink_heartbeat_monitor')
 
-        port='/dev/ttyUSB0'
+        port='/dev/drone_usb'
         baud=57600
 
         # 連接到 Mavlink，您可以調整此處的連線方式
