@@ -8,3 +8,6 @@ bag_files/
 
 # Thermal camera log file
 *.log
+
+
+__pycache__

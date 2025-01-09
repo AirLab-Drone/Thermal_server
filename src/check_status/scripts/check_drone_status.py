@@ -24,7 +24,11 @@ from rclpy.time import Time
 from rclpy.duration import Duration
 
 from check_status_py.error_code import *
-from check_status_py.tools import post_to_server, check_port_exists, ros2_time_to_taiwan_timezone, print_json
+from check_status_py.tools import (post_to_server, 
+                                   check_port_exists, 
+                                   ros2_time_to_taiwan_timezone,
+                                   print_json, 
+                                   parse_sensor_health)
 
 class CheckDroneStatus(Node):
 
@@ -217,6 +221,8 @@ class CheckDroneStatus(Node):
             for i in range(1, 7):
                 if drone_status_dict[f"servo_output_{i}"] < 1000 or drone_status_dict[f"servo_output_{i}"] > 2000:
                     error_list_set.add(ERROR_CODE.MOTOR_OUTPUTS_ERROR)
+
+        # TODO: parse_sensor_health(sensors_health)
 
         return error_list_set
 

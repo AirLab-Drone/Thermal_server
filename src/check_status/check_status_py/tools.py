@@ -5,6 +5,7 @@ import json
 import requests
 import os
 
+from error_code import sensor_flags
 
 
 
@@ -52,3 +53,31 @@ def ros2_time_to_taiwan_timezone(ros2_time) -> str:
     taiwan_datetime = utc_datetime.astimezone(taiwan_timezone)
 
     return taiwan_datetime.isoformat()
+
+
+
+
+def parse_sensor_health(sensors_health):
+    '''
+    :param sensors_health: sys_status.onboard_control_sensors_health 的值
+    :return: 回傳每個感測器合在一起成功或錯誤代碼陣列
+    '''
+
+    erroe_code_list = []
+
+    print(f"系統感測器健康狀態: {sensors_health}")
+    for flag, sensor in sensor_flags.items():
+        if sensors_health & flag:
+            print(f"{sensor[0]}: True")
+            # erroe_code_list.append(ERROR_CODE.SUCCESS)
+        else:
+            print(f"{sensor[0]}: False")
+            erroe_code_list.append(sensor[1])
+            
+    print(erroe_code_list)
+
+
+if __name__ == "__main__":
+    # sensors_health = 1467088239  # 你的 onboard_control_sensors_health 數值
+    sensors_health = 1198562671  # 你的 onboard_control_sensors_health 數值
+    parse_sensor_health(sensors_health)

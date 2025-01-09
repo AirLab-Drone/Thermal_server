@@ -65,15 +65,8 @@ class check_thermal_camera(Node):
         self.ds4025ft_thermal_img = None
         self.ds4025ft_thermal_hot_spot_temp = None
 
-        """
-        # todo:
-        分兩個API, ipt430m 和 ds4025ft
-        
-        1. 上傳溫度 圖片 狀態 (即時顯示, 不寫進資料庫)
-        2. 每小時檢查一次 寫進資料庫 發送通知？
+        # todo:用RTSP發送及時畫面
 
-
-        """
 
         # -------------------------------- send server ------------------------------- #
         # 設定時間間隔，檢查是否接收到新的數據

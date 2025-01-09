@@ -40,6 +40,17 @@ class check_UpS_status(Node):
             "error_code": []
         }
 
+
+        # 設定每小時發送一次
+        # self.target_times = [time(hour, 0) for hour in range(1, 24)]
+
+        # 每分鐘發送 (Demo 用)
+        self.target_times = [
+            time(hour, minute) for hour in range(0, 24) for minute in range(0, 60)
+        ]
+
+        
+
         # 斷線等待時間
         self.__interval_time = Duration(seconds=5)
 
