@@ -90,11 +90,12 @@ class CheckDroneStatus(Node):
         try:
             if not self.master or self.mavlink_status != 'is_connected':
                 self.check_mavlink_connection()
-                
+
             upload_drone_status = self.drone_status_dict.copy()
             new_errors = self.check_drone_status(upload_drone_status)
             upload_drone_status["error_code"] = upload_drone_status["error_code"].union(new_errors)
             upload_drone_status["error_code"] = list(upload_drone_status["error_code"])
+            upload_drone_status["upload_time"] = ros2_time_to_taiwan_timezone(self.get_clock().now())
 
             # 確保 upload_time 是字串
             if isinstance(upload_drone_status["upload_time"], datetime):
