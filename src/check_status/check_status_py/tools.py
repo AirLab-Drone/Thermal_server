@@ -5,7 +5,7 @@ import json
 import requests
 import os
 
-from error_code import sensor_flags
+from check_status_py.error_code import sensor_flags
 
 
 
