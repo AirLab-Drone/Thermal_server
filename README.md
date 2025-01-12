@@ -22,6 +22,13 @@ pip install opencv-python pymavlink pyserial
 pip install mailjet_rest
 ```
 
+RTSP
+```
+sudo apt update
+sudo apt install -y gstreamer1.0-tools gstreamer1.0-rtsp gstreamer1.0-plugins-bad
+sudo apt install -y ffmpeg
+```
+
 
 
 ### How to use
