@@ -67,7 +67,6 @@ class check_thermal_camera(Node):
         self.ds4025ft_thermal_img = None
         self.ds4025ft_thermal_hot_spot_temp = None
 
-        # todo:用RTSP發送及時畫面
 
 
         # -------------------------------- send server ------------------------------- #
@@ -118,8 +117,6 @@ class check_thermal_camera(Node):
 
         self.timer = self.create_timer(60, self.check_and_upload_at_target_times)
 
-        # self.send_ipt430m_server_timmer = self.create_timer(0.5, self.send_ipt430m_server_callback)
-        # self.send_ds4025ft_server_timmer = self.create_timer(0.5, self.send_ds4025ft_server_callback)
 
     def ipt430m_thermal_img_callback(self, msg):
         self.ipt430m_thermal_img = self.bridge.imgmsg_to_cv2(
@@ -333,7 +330,39 @@ class check_thermal_camera(Node):
             )
 
             return padded_image
-        
+
+
+
+def main(args=None):
+    rclpy.init(args=args)
+    node = check_thermal_camera()
+    rclpy.spin(node)
+    rclpy.shutdown()
+
+
+if __name__ == "__main__":
+    main()
+
+    # [INFO] [1734087299.131832361] [check_thermal_camera]: DS4025FT image and data uploaded successfully
+    # {
+    #     "upload_time": "2024-12-13T18:54:59.117609+08:00",
+    #     "source": "ds4025ft",
+    #     "hot_spot_temp": 25.299999237060547,
+    #     "thermal_img": true,
+    #     "error_code": []
+    # }
+    # [INFO] [1734087299.139642283] [check_thermal_camera]: IPT430M image and data uploaded successfully
+    # {
+    #     "upload_time": "2024-12-13T18:54:59.117609+08:00",
+    #     "source": "ipt430m",
+    #     "hot_spot_temp": 14.300000190734863,
+    #     "thermal_img": true,
+    #     "error_code": []
+    # }
+
+
+
+
 
 
     # ------------------------------------ 用不到 ----------------------------------- #
@@ -460,29 +489,3 @@ class check_thermal_camera(Node):
     #         self.get_logger().error(f"Error in send_server_callback: {e}")
 
 
-def main(args=None):
-    rclpy.init(args=args)
-    node = check_thermal_camera()
-    rclpy.spin(node)
-    rclpy.shutdown()
-
-
-if __name__ == "__main__":
-    main()
-
-    # [INFO] [1734087299.131832361] [check_thermal_camera]: DS4025FT image and data uploaded successfully
-    # {
-    #     "upload_time": "2024-12-13T18:54:59.117609+08:00",
-    #     "source": "ds4025ft",
-    #     "hot_spot_temp": 25.299999237060547,
-    #     "thermal_img": true,
-    #     "error_code": []
-    # }
-    # [INFO] [1734087299.139642283] [check_thermal_camera]: IPT430M image and data uploaded successfully
-    # {
-    #     "upload_time": "2024-12-13T18:54:59.117609+08:00",
-    #     "source": "ipt430m",
-    #     "hot_spot_temp": 14.300000190734863,
-    #     "thermal_img": true,
-    #     "error_code": []
-    # }
