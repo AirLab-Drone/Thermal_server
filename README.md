@@ -11,7 +11,6 @@ This is respository for the thermal server project. It use robot operating syste
 - thermal_msgs:This package defines the messages used in the thermal server project.
 - thermal_ds4025ft:This package is used to communicate with the thermal camera DS4025FT.
 - ~~thermal_gui:Is not used in this project.~~
-- ~~thermal_im4:This package is used to communicate with the thermal camera IM4. Is not used in this project.~~
 
 ### 安裝包
 ```
