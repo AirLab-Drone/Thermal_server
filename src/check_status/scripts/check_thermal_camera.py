@@ -25,6 +25,8 @@ ros2 bag play ../Desktop/rosbag2_2024_12_13-21_49_32/ --loop --read-ahead-queue-
 """
 
 
+
+# TODO: RTSP 串流
 class check_thermal_camera(Node):
     def __init__(self):
         super().__init__("check_thermal_camera")
