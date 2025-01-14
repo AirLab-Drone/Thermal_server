@@ -83,7 +83,7 @@ class CheckDroneStatus(Node):
 
 
         # 每分鐘檢查一次
-        self.timer = self.create_timer(60, self.check_and_upload_at_target_times)
+        self.timer = self.create_timer(60.0, self.check_and_upload_at_target_times)
 
     def check_and_upload_at_target_times(self):
         now = datetime.now().time()
@@ -98,7 +98,7 @@ class CheckDroneStatus(Node):
             upload_drone_status = self.drone_status_dict.copy()
             new_errors = self.check_drone_status(upload_drone_status)
             upload_drone_status["error_code"] = upload_drone_status["error_code"].union(new_errors)
-            upload_drone_status["error_code"] = list(upload_drone_status["error_code"])
+            upload_drone_status["error_code"] = sorted(list(upload_drone_status["error_code"]))
             upload_drone_status["upload_time"] = ros2_time_to_taiwan_timezone(self.get_clock().now())
 
             # 確保 upload_time 是字串
@@ -201,6 +201,12 @@ class CheckDroneStatus(Node):
     def check_drone_status(self, drone_status_dict) -> set:
         error_list_set = set()
 
+
+        if drone_status_dict["sensor_health"] is not None:
+            for sensor in parse_sensor_health(drone_status_dict["sensor_health"]):
+                error_list_set.add(sensor)
+
+
         if drone_status_dict["gps_hdop"] is not None:
             if drone_status_dict["gps_hdop"] == UINT16_MAX or drone_status_dict["gps_hdop"] > 100:
                 error_list_set.add(ERROR_CODE.GPS_HDOP_ERROR)
@@ -221,8 +227,6 @@ class CheckDroneStatus(Node):
             for i in range(1, 7):
                 if drone_status_dict[f"servo_output_{i}"] < 1000 or drone_status_dict[f"servo_output_{i}"] > 2000:
                     error_list_set.add(ERROR_CODE.MOTOR_OUTPUTS_ERROR)
-
-        # TODO: parse_sensor_health(sensors_health)
 
         return error_list_set
 
@@ -270,9 +274,6 @@ if __name__ == '__main__':
 #     2. up squared 狀態 (RGB, Thermal) 
 #     3. 環境熱像儀狀態
 # ''' 
-
-# # TODO: 一直要資料(並確認是否有連接) 但上傳的時間不一樣 ex:一天一次
-
 
 
 # class check_Drone_status(Node):

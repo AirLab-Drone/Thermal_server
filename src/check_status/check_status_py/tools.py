@@ -57,7 +57,7 @@ def ros2_time_to_taiwan_timezone(ros2_time) -> str:
 
 
 
-def parse_sensor_health(sensors_health):
+def parse_sensor_health(sensors_health) -> list:
     '''
     :param sensors_health: sys_status.onboard_control_sensors_health 的值
     :return: 回傳每個感測器合在一起成功或錯誤代碼陣列
@@ -75,6 +75,7 @@ def parse_sensor_health(sensors_health):
             erroe_code_list.append(sensor[1])
             
     print(erroe_code_list)
+    return erroe_code_list
 
 
 if __name__ == "__main__":
