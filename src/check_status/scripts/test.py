@@ -37,11 +37,13 @@ def process_messages():
                     roll_deg = math.degrees(msg.roll)
                     pitch_deg = math.degrees(msg.pitch)
                     yaw_deg = math.degrees(msg.yaw)
-                    print(f"姿態 - Roll: {roll_deg:.2f}°, Pitch: {pitch_deg:.2f}°, Yaw: {yaw_deg:.2f}°")
+                    # print(f"姿態 - Roll: {roll_deg:.2f}°, Pitch: {pitch_deg:.2f}°, Yaw: {yaw_deg:.2f}°")
                 elif msg_id == mavutil.mavlink.MAVLINK_MSG_ID_SYS_STATUS:
                     battery_remaining = msg.battery_remaining
                     voltage_battery = msg.voltage_battery / 1000.0  # 轉換為 V
                     # print(f"電池狀態 - 電壓: {voltage_battery:.2f}V, 剩餘電量: {battery_remaining}%")
+                    sensor_health = msg.onboard_control_sensors_health
+                    print(sensor_health)
                 # 添加其他訊息類型的處理邏輯...
         except Exception as e:
             print(f"處理訊息時出現錯誤: {e}")
@@ -71,7 +73,7 @@ def connect_to_pixhawk():
                 master.target_system,
                 master.target_component,
                 mavutil.mavlink.MAV_DATA_STREAM_EXTENDED_STATUS,  # 系統狀態訊息
-                10,  # 訊息頻率 (Hz)
+                100,  # 訊息頻率 (Hz)
                 1    # 啟用
             )
 

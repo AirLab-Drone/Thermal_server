@@ -9,8 +9,6 @@
 # '''
 
 
-
-
 from datetime import datetime, timezone, time
 import json
 import math
@@ -63,14 +61,8 @@ class CheckDroneStatus(Node):
         self.master = None
         self.mavlink_status = None
 
-        self.check_mavlink_connection()
+        self.__connect_mavlink(self.mavlink_port,  self.mavlink_baud)
 
-        # 指定的上傳時間
-        # self.target_times = [time(1, 0), 
-        #                      time(2, 0), 
-        #                      time(3, 0), 
-        #                      time(4, 0)]
-        
 
         # 每小時發送
         # self.target_times = [time(hour, 0) for hour in range(1, 24)]
@@ -79,11 +71,11 @@ class CheckDroneStatus(Node):
         self.target_times = [time(hour, minute) for hour in range(0, 24) for minute in range(0, 60)]
         
 
-
-
-
         # 每分鐘檢查一次
-        self.timer = self.create_timer(60.0, self.check_and_upload_at_target_times)
+        self.timer = self.create_timer(5, self.check_and_upload_at_target_times)
+
+
+
 
     def check_and_upload_at_target_times(self):
         now = datetime.now().time()
@@ -91,35 +83,63 @@ class CheckDroneStatus(Node):
             self.perform_check_and_upload()
 
     def perform_check_and_upload(self):
+        
+        self.reset_drone_status_dict()
+
+        self.drone_status_dict.update({
+            "upload_time": ros2_time_to_taiwan_timezone(self.get_clock().now())
+        })
+
+        # 確保 upload_time 是字串
+        if isinstance(self.drone_status_dict["upload_time"], datetime):
+            self.drone_status_dict["upload_time"] = self.drone_status_dict["upload_time"].isoformat()
+
+
+        self.check_mavlink_connection()
+
+        # print(self.drone_status_dict)
+
+        new_errors = self.check_drone_status(self.drone_status_dict)
+        self.drone_status_dict["error_code"].update(new_errors)
+
+
+        self.drone_status_dict["error_code"] = sorted(list(self.drone_status_dict["error_code"]))
+
+
+        # self.drone_status_dict.update({
+        #     "error_code": sorted(list(self.drone_status_dict["error_code"].union(new_errors))),
+        # })
+
+        # print(self.drone_status_dict)
+
+    
+        # upload_drone_status = self.drone_status_dict.copy()
+        # new_errors = self.check_drone_status(upload_drone_status)
+        # upload_drone_status["error_code"] = upload_drone_status["error_code"].union(new_errors)
+        # upload_drone_status["error_code"] = sorted(list(upload_drone_status["error_code"]))
+        # upload_drone_status["upload_time"] = ros2_time_to_taiwan_timezone(self.get_clock().now())
+
+        # # print_json(upload_drone_status)
+
         try:
-            if not self.master or self.mavlink_status != 'is_connected':
-                self.check_mavlink_connection()
-
-            upload_drone_status = self.drone_status_dict.copy()
-            new_errors = self.check_drone_status(upload_drone_status)
-            upload_drone_status["error_code"] = upload_drone_status["error_code"].union(new_errors)
-            upload_drone_status["error_code"] = sorted(list(upload_drone_status["error_code"]))
-            upload_drone_status["upload_time"] = ros2_time_to_taiwan_timezone(self.get_clock().now())
-
-            # 確保 upload_time 是字串
-            if isinstance(upload_drone_status["upload_time"], datetime):
-                upload_drone_status["upload_time"] = upload_drone_status["upload_time"].isoformat()
-
-            print_json(upload_drone_status)
-
             # 將資料發送到伺服器
-            response = post_to_server(url=self.__server_url, json=upload_drone_status).status_code
+            response = post_to_server(url=self.__server_url, json=self.drone_status_dict).status_code
             if response == 200:
-                self.get_logger().info(f"上傳成功: {upload_drone_status}")
+                self.get_logger().info(f"上傳成功:\n {self.drone_status_dict}")
+                # self.get_logger().info(f"上傳成功: {upload_drone_status}")
             else:
-                self.get_logger().error(f"上傳失敗: {upload_drone_status}")
+                self.get_logger().error(f"上傳失敗: {self.drone_status_dict}")
 
         except Exception as e:
             self.get_logger().error(f"上傳失敗: {e}")
 
+
+
+
+
+
+
     def check_mavlink_connection(self):
-        self.drone_status_dict["upload_time"] = ros2_time_to_taiwan_timezone(self.get_clock().now())
-        self.drone_status_dict["error_code"].clear()
 
         if not check_port_exists(self.mavlink_port):
             self.master = None
@@ -135,34 +155,65 @@ class CheckDroneStatus(Node):
                 self.drone_status_dict["mavlink_status"] = self.mavlink_status
                 self.master = None
                 return
-            else:
-                self.get_logger().info(f"已連接到 pixhawk6c")
 
         if self.master is not None:
             self.mavlink_status = 'is_connected'
             self.drone_status_dict["mavlink_status"] = self.mavlink_status
-            try:
-                msg = self.master.recv_match(blocking=True, timeout=0.5)
-                if not msg:
-                    self.drone_status_dict["error_code"].add(ERROR_CODE.MAVLINK_CONNECTION_ERROR)
-                    self.master = None
-                else:
-                    self.update_status_from_messages()
-            except Exception as e:
-                self.drone_status_dict["error_code"].add(ERROR_CODE.MAVLINK_CONNECTION_ERROR)
-                self.master = None
+            # TODO: 更新訊息壞掉==
+
+
+
+            self.update_status_from_messages()
+
+
+
+            # msg = self.master.recv_match(type=['ATTITUDE', 'SYS_STATUS', 'GPS_RAW_INT', 'SERVO_OUTPUT_RAW'], blocking=True)
+
+
+
+
+
+            
+
+            # print(self.drone_status_dict)
+
+
+            # msg = self._get_mavlink_message('SYS_STATUS', 5)
+            # msg = self.master.recv_match(blocking=True)
+            # if msg is not None:
+            #     print(f"Received {msg.get_type()}: {msg.to_dict()}")
+            #     print("-------------------")
+            #     # self.update_status_from_messages(msg)
+            # else:
+            #     self.drone_status_dict["error_code"].add(ERROR_CODE.MAVLINK_CONNECTION_ERROR)
+            #     self.master = None
+
+
+
+
+
+
+
+            # try:
+            #     msg = self.master.recv_match(blocking=False)
+            #     if not msg:
+            #         self.drone_status_dict["error_code"].add(ERROR_CODE.MAVLINK_CONNECTION_ERROR)
+            #         self.master = None
+            #     else:
+            #         print(msg)
+            #         print("-------------------")
+            #         # self.update_status_from_messages(msg)
+            # except Exception as e:
+            #     self.drone_status_dict["error_code"].add(ERROR_CODE.MAVLINK_CONNECTION_ERROR)
+            #     self.master = None
+
+
+
 
     def update_status_from_messages(self):
-        if 'ATTITUDE' in self.master.messages:
-            attitude = self.master.messages['ATTITUDE']
-            self.drone_status_dict.update({
-                "attitude_roll": attitude.roll,
-                "attitude_pitch": attitude.pitch,
-                "attitude_yaw": attitude.yaw
-            })
 
-        if 'SYS_STATUS' in self.master.messages:
-            sys_status = self.master.messages['SYS_STATUS']
+        sys_status = self._get_mavlink_message('SYS_STATUS')
+        if sys_status:
             self.drone_status_dict.update({
                 "sensor_health": sys_status.onboard_control_sensors_health,
                 "battery_voltage": sys_status.voltage_battery,
@@ -170,42 +221,111 @@ class CheckDroneStatus(Node):
                 "battery_remaining": sys_status.battery_remaining
             })
 
-        if 'GPS_RAW_INT' in self.master.messages:
-            gps_raw = self.master.messages['GPS_RAW_INT']
+
+        attitude = self._get_mavlink_message('ATTITUDE')
+        if attitude:
             self.drone_status_dict.update({
-                "gps_hdop": gps_raw.eph,
-                "gps_satellites_visible": gps_raw.satellites_visible
+                "attitude_roll": attitude.roll,
+                "attitude_pitch": attitude.pitch,
+                "attitude_yaw": attitude.yaw
             })
 
-        if 'SERVO_OUTPUT_RAW' in self.master.messages:
-            servo_output = self.master.messages['SERVO_OUTPUT_RAW']
+
+        gps_raw_int = self._get_mavlink_message('GPS_RAW_INT')
+        if gps_raw_int:
+            self.drone_status_dict.update({
+                "gps_hdop": gps_raw_int.eph,
+                "gps_satellites_visible": gps_raw_int.satellites_visible
+            })
+
+        servo_output_raw = self._get_mavlink_message('SERVO_OUTPUT_RAW')
+        if servo_output_raw:
             for i in range(1, 7):
-                self.drone_status_dict[f"servo_output_{i}"] = getattr(servo_output, f"servo{i}_raw")
+                self.drone_status_dict.update({
+                    **{f"servo_output_{i}": getattr(servo_output_raw, f"servo{i}_raw") for i in range(1, 7)}
+                })
+
+
+
+        # print(sys_status)
+        # print(attitude)
+        # print(gps_raw_int)
+        # print(servo_output_raw)
+
+
+
+        # if 'ATTITUDE' in self.master.messages:
+        #     # print("ATTITUDE")
+        #     attitude = self.master.messages['ATTITUDE']
+        #     self.drone_status_dict.update({
+        #         "attitude_roll": attitude.roll,
+        #         "attitude_pitch": attitude.pitch,
+        #         "attitude_yaw": attitude.yaw
+        #     })
+
+
+        # if 'SYS_STATUS' in self.master.messages:
+        #     # print("SYS_STATUS")
+        #     sys_status = self.master.messages['SYS_STATUS']
+            
+        #     self.drone_status_dict.update({
+        #         "sensor_health": sys_status.onboard_control_sensors_health,
+        #         "battery_voltage": sys_status.voltage_battery,
+        #         "battery_current": sys_status.current_battery,
+        #         "battery_remaining": sys_status.battery_remaining
+        #     })
+
+        # if 'GPS_RAW_INT' in self.master.messages:
+        #     # print("GPS_RAW_INT")
+        #     gps_raw = self.master.messages['GPS_RAW_INT']
+        #     self.drone_status_dict.update({
+        #         "gps_hdop": gps_raw.eph,
+        #         "gps_satellites_visible": gps_raw.satellites_visible
+        #     })
+
+        # if 'SERVO_OUTPUT_RAW' in self.master.messages:
+        #     # print("SERVO_OUTPUT_RAW")
+        #     servo_output = self.master.messages['SERVO_OUTPUT_RAW']
+        #     for i in range(1, 7):
+        #         self.drone_status_dict[f"servo_output_{i}"] = getattr(servo_output, f"servo{i}_raw")
+
+
 
     def __connect_mavlink(self, port, baud) -> bool:
         try:
             self.master = mavutil.mavlink_connection(port, baud)
             if not self.master.wait_heartbeat(timeout=5):
+                self.get_logger().warn(f"pixhawk6c 未連接!")
+                return False
+            else:
+                self.get_logger().info(f"已連接到 pixhawk6c...")
                 self.master.mav.request_data_stream_send(
                     self.master.target_system,
                     self.master.target_component,
                     mavutil.mavlink.MAV_DATA_STREAM_ALL,
-                    10, 1
+                    50, 1
                 )
-                return False
-            else:
                 return True
         except Exception:
             return False
 
+
+    def _get_mavlink_message(self, message_type, timeout=5):
+        try:
+            return self.master.recv_match(type=message_type, blocking=True, timeout=timeout)
+        except Exception as e:
+            print(f"獲取 {message_type} 消息時出現錯誤: {e}")
+            return None
+
+
+
     def check_drone_status(self, drone_status_dict) -> set:
         error_list_set = set()
 
-
         if drone_status_dict["sensor_health"] is not None:
-            for sensor in parse_sensor_health(drone_status_dict["sensor_health"]):
+            sensors_health_error = parse_sensor_health(drone_status_dict["sensor_health"])
+            for sensor in sensors_health_error:
                 error_list_set.add(sensor)
-
 
         if drone_status_dict["gps_hdop"] is not None:
             if drone_status_dict["gps_hdop"] == UINT16_MAX or drone_status_dict["gps_hdop"] > 100:
@@ -227,8 +347,32 @@ class CheckDroneStatus(Node):
             for i in range(1, 7):
                 if drone_status_dict[f"servo_output_{i}"] < 1000 or drone_status_dict[f"servo_output_{i}"] > 2000:
                     error_list_set.add(ERROR_CODE.MOTOR_OUTPUTS_ERROR)
-
+        # print(error_list_set)
         return error_list_set
+    
+
+    def reset_drone_status_dict(self):
+        clear_drone_status_dict = {
+            "upload_time": None,
+            "mavlink_status": None,
+            "sensor_health": None,
+            "battery_voltage": None,
+            "battery_current": None,
+            "battery_remaining": None,
+            "gps_hdop": None,
+            "gps_satellites_visible": None,
+            "attitude_roll": None,
+            "attitude_pitch": None,
+            "attitude_yaw": None,
+            "servo_output_1": None,
+            "servo_output_2": None,
+            "servo_output_3": None,
+            "servo_output_4": None,
+            "servo_output_5": None,
+            "servo_output_6": None,
+            "error_code": set()
+        }
+        self.drone_status_dict.update(clear_drone_status_dict)
 
 
 def main(args=None):
@@ -240,7 +384,6 @@ def main(args=None):
 
 if __name__ == '__main__':
     main()
-
 
 
 
@@ -316,9 +459,9 @@ if __name__ == '__main__':
 #         self.mavlink_status = None  # 狀態標記：'not_found', 'connecting', 'is_connected'
 
 
-#         self.check_mavlink_connection_timer = self.create_timer(0.01, self.check_mavlink_connection_callback)
+#         self.check_mavlink_connection_timer = self.create_timer(1, self.check_mavlink_connection_callback)
 
-#         self.upload_to_server_timmer = self.create_timer(0.005, self.upload_to_server_callback)
+#         self.upload_to_server_timmer = self.create_timer(1, self.upload_to_server_callback)
      
 
 #     def upload_to_server_callback(self):
@@ -399,7 +542,7 @@ if __name__ == '__main__':
 #             self.drone_status_dict["mavlink_status"] = self.mavlink_status
 #             try:
                 
-#                 msg = self.master.recv_match(blocking=True, timeout=0.5)
+#                 msg = self.master.recv_match(blocking=False, timeout=0.5)
 
 #                 if not msg:
 #                     self.get_logger().warn(f"未接收到訊息，嘗試重新連接...")

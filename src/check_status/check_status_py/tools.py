@@ -65,16 +65,17 @@ def parse_sensor_health(sensors_health) -> list:
 
     erroe_code_list = []
 
-    print(f"系統感測器健康狀態: {sensors_health}")
+    # print(f"系統感測器健康狀態: {sensors_health}")
     for flag, sensor in sensor_flags.items():
         if sensors_health & flag:
-            print(f"{sensor[0]}: True")
+            pass
+            # print(f"{sensor[0]}: True")
             # erroe_code_list.append(ERROR_CODE.SUCCESS)
         else:
-            print(f"{sensor[0]}: False")
+            # print(f"{sensor[0]}: False")
             erroe_code_list.append(sensor[1])
             
-    print(erroe_code_list)
+    # print(erroe_code_list)
     return erroe_code_list
 
 
