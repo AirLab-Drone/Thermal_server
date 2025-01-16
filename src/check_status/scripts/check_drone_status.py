@@ -75,7 +75,7 @@ class CheckDroneStatus(Node):
         ]
 
         # 每分鐘檢查一次
-        self.timer = self.create_timer(5, self.check_and_upload_at_target_times)
+        self.timer = self.create_timer(60, self.check_and_upload_at_target_times)
 
     def check_and_upload_at_target_times(self):
         now = datetime.now().time()
