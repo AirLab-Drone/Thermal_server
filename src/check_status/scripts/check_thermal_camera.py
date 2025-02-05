@@ -25,8 +25,6 @@ ros2 bag play ../Desktop/rosbag2_2024_12_13-21_49_32/ --loop --read-ahead-queue-
 """
 
 
-
-# TODO: RTSP 串流
 class check_thermal_camera(Node):
     def __init__(self):
         super().__init__("check_thermal_camera")
@@ -109,10 +107,10 @@ class check_thermal_camera(Node):
         ]
 
         self.send_ipt430m_thermal_stream_timmer = self.create_timer(
-            0.1, self.send_ipt430m_thermal_stream_callback
+            0.5, self.send_ipt430m_thermal_stream_callback
         )
         self.send_ds4025ft_thermal_stream_timmer = self.create_timer(
-            0.1, self.send_ds4025ft_thermal_stream_callback
+            0.5, self.send_ds4025ft_thermal_stream_callback
         )
 
         self.timer = self.create_timer(60, self.check_and_upload_at_target_times)
@@ -142,6 +140,13 @@ class check_thermal_camera(Node):
 
         current_time = self.get_clock().now()
 
+        # 確保 topic 實際上有數據被發佈
+        if self.ipt430m_thermal_img is None or self.ipt430m_thermal_hot_spot_temp is None:
+            self.get_logger().error("DS4025FT topic exists but no data received, treating as timeout")
+            self.ipt430m_thermal_img = None
+            self.ipt430m_thermal_hot_spot_temp = None
+            return
+        
         ipt430m_encoded_img = None
 
         if (
@@ -151,11 +156,12 @@ class check_thermal_camera(Node):
             self.ipt430m_thermal_img = None
             self.ipt430m_thermal_hot_spot_temp = None
         else:
-            resized_ipt430m_img = self.resize_with_aspect_ratio(
-                self.ipt430m_thermal_img, 720, 720
-            )
-            _, ipt430m_buffer = cv2.imencode(".jpg", resized_ipt430m_img)
-            ipt430m_encoded_img = base64.b64encode(ipt430m_buffer).decode("utf-8")
+            if self.ipt430m_thermal_img is not None:
+                resized_ipt430m_img = self.resize_with_aspect_ratio(
+                    self.ipt430m_thermal_img, 720, 720
+                )
+                _, ipt430m_buffer = cv2.imencode(".jpg", resized_ipt430m_img)
+                ipt430m_encoded_img = base64.b64encode(ipt430m_buffer).decode("utf-8")
 
         try:
             response_ipt430m = post_to_server(
@@ -178,6 +184,15 @@ class check_thermal_camera(Node):
     def send_ds4025ft_thermal_stream_callback(self):
         current_time = self.get_clock().now()
 
+
+        # 確保 topic 實際上有數據被發佈
+        if self.ds4025ft_thermal_img is None or self.ds4025ft_thermal_hot_spot_temp is None:
+            self.get_logger().error("DS4025FT topic exists but no data received, treating as timeout")
+            self.ds4025ft_thermal_img = None
+            self.ds4025ft_thermal_hot_spot_temp = None
+            return
+
+
         ds4025ft_encoded_img = None
 
         if (
@@ -187,11 +202,12 @@ class check_thermal_camera(Node):
             self.ds4025ft_thermal_img = None
             self.ds4025ft_thermal_hot_spot_temp = None
         else:
-            resized_ds4025ft_img = self.resize_with_aspect_ratio(
-                self.ds4025ft_thermal_img, 480, 480
-            )
-            _, ds4025ft_buffer = cv2.imencode(".jpg", resized_ds4025ft_img)
-            ds4025ft_encoded_img = base64.b64encode(ds4025ft_buffer).decode("utf-8")
+            if self.ds4025ft_thermal_img is not None:
+                resized_ds4025ft_img = self.resize_with_aspect_ratio(
+                    self.ds4025ft_thermal_img, 480, 480
+                )
+                _, ds4025ft_buffer = cv2.imencode(".jpg", resized_ds4025ft_img)
+                ds4025ft_encoded_img = base64.b64encode(ds4025ft_buffer).decode("utf-8")
 
         try:
             response_ds4025ft = post_to_server(

@@ -23,6 +23,7 @@ install(PROGRAMS
   scripts/check_drone_status.py
   scripts/check_UpS_status.py
   scripts/send_fire_alert.py
+  scripts/test_RTSP.py
   DESTINATION lib/${PROJECT_NAME}
 )
 
