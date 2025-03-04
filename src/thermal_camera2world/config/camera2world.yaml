@@ -2,55 +2,55 @@
   ros__parameters:
     Alert_Waiting_Time: 5
     Thermal_LowerLeft:
-    - 1028
-    - 34
+    - 51
+    - 1005
     Thermal_LowerRight:
-    - 1226
-    - 929
+    - 141
+    - 196
     Thermal_UpperLeft:
-    - 116
-    - 337
+    - 1211
+    - 983
     Thermal_UpperRight:
-    - 365
-    - 959
-    Threshold_Temperature: 80.0
+    - 1227
+    - 151
+    Threshold_Temperature: 60.0
     World_LowerLeft:
-    - 9.0
-    - 6.0
+    - 4.01
+    - 7.87
     World_LowerRight:
-    - 8.0
-    - 9.0
+    - 7.16
+    - 8.85
     World_UpperLeft:
-    - 5.0
-    - 5.0
+    - 4.72
+    - 5.74
     World_UpperRight:
-    - 6.0
-    - 8.0
+    - 8.2
+    - 6.25
 /thermal_IPT430M/thermal_camera_to_world:
   ros__parameters:
     Alert_Waiting_Time: 5
     Thermal_LowerLeft:
-    - 281
-    - 187
+    - 481
+    - 169
     Thermal_LowerRight:
-    - 454
-    - 27
+    - 469
+    - 361
     Thermal_UpperLeft:
-    - 42
-    - 333
+    - 57
+    - 145
     Thermal_UpperRight:
-    - 483
-    - 335
-    Threshold_Temperature: 80.0
+    - 78
+    - 362
+    Threshold_Temperature: 60.0
     World_LowerLeft:
-    - 8.0
-    - 7.0
+    - 12.03
+    - 3.85
     World_LowerRight:
-    - 5.0
-    - 6.0
+    - 6.98
+    - 1.87
     World_UpperLeft:
-    - 1.0
-    - 2.0
+    - 7.35
+    - 11.01
     World_UpperRight:
-    - 3.0
-    - 4.0
+    - 4.01
+    - 5.08
