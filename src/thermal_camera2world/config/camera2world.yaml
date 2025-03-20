@@ -13,7 +13,7 @@
     Thermal_UpperRight:
     - 1227
     - 151
-    Threshold_Temperature: 60.0
+    Threshold_Temperature: 50.0
     World_LowerLeft:
     - 4.01
     - 7.87
@@ -30,27 +30,27 @@
   ros__parameters:
     Alert_Waiting_Time: 5
     Thermal_LowerLeft:
-    - 481
-    - 169
+    - 495
+    - 348
     Thermal_LowerRight:
     - 469
-    - 361
+    - 85
     Thermal_UpperLeft:
-    - 57
-    - 145
+    - 13
+    - 376
     Thermal_UpperRight:
-    - 78
-    - 362
-    Threshold_Temperature: 60.0
+    - 53
+    - 64
+    Threshold_Temperature: 50.0
     World_LowerLeft:
-    - 12.03
-    - 3.85
+    - 5.54
+    - 1.0
     World_LowerRight:
-    - 6.98
-    - 1.87
+    - 10.21
+    - 4.13
     World_UpperLeft:
-    - 7.35
-    - 11.01
+    - 1.54
+    - 4.34
     World_UpperRight:
-    - 4.01
-    - 5.08
+    - 5.64
+    - 10.13
