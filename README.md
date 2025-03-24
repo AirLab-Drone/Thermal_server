@@ -10,7 +10,8 @@ This is respository for the thermal server project. It use robot operating syste
 - thermal_ipt430m:This package is used to communicate with the thermal camera IPT430M.
 - thermal_msgs:This package defines the messages used in the thermal server project.
 - thermal_ds4025ft:This package is used to communicate with the thermal camera DS4025FT.
-- ~~thermal_gui:Is not used in this project.~~
+
+
 
 ### 安裝包
 ```
@@ -20,13 +21,6 @@ pip install opencv-python pymavlink pyserial
 發送email
 ```
 pip install mailjet_rest
-```
-
-RTSP
-```
-sudo apt update
-sudo apt install -y gstreamer1.0-tools gstreamer1.0-rtsp gstreamer1.0-plugins-bad
-sudo apt install -y ffmpeg
 ```
 
 
@@ -44,13 +38,6 @@ colcon build the workspace:
 ```
 colcon build
 ```
-
-啟動熱像儀偵測
-
-```
-ros2 launch thermal_camera2world launch_all_camera.launch.py
-```
-
 
 
 ----

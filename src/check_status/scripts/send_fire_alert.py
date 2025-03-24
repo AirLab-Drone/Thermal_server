@@ -27,8 +27,8 @@ class SendFireAlert(Node):
         self.timer = self.create_timer(60.0, self.cooldown_countdown)  # 每分鐘倒數計時
 
         # 讀取 Mailjet API 金鑰與密鑰
-        self.mailjet_api_key = os.getenv("MAILJET_API_KEY")
-        self.mailjet_api_secret = os.getenv("MAILJET_API_SECRET")
+        self.mailjet_api_key = "748bf793493ffd2369d9e9e822552e32"
+        self.mailjet_api_secret = "992763725dd166f2ade229b0b1984afb"
 
         if not self.mailjet_api_key or not self.mailjet_api_secret:
             self.get_logger().error("Mailjet API key or secret is not set.")
@@ -87,8 +87,8 @@ class SendFireAlert(Node):
                         "Name": "Thermal Alert System",
                     },
                     # "To": [{"Email": "danny1.2104@gmail.com", "Name": "Danny"}],
-                    "To": [{"Email": "wj582693@gmail.com", "Name": "Danny"}],
-                    "Subject": "🔥 Fire Alert Detected!",
+                    "To": [{"Email": "airlab.dronedrone@gmail.com", "Name": "Fire Alert"}],
+                    "Subject": "🔥🔥🔥 Fire Alert Detected!",
                     "TextPart": "A fire alert has been triggered by the thermal detection system. Please check the system immediately.",
                     "HTMLPart": "<h3>🔥 Fire Alert!</h3><p>A fire has been detected. Please respond immediately.</p>",
                 }
