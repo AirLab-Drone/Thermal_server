@@ -36,8 +36,9 @@ install(PROGRAMS
   scripts/thermal_camera2world.py
   scripts/compare_thermalAlert.py
   scripts/setup_camera2world_point.py
+
+  scripts/uwb_experiment.py
   scripts/camera_calibration_circle.py
-  scripts/camera_calibration_chess.py
   scripts/clibration_compare.py
   DESTINATION lib/${PROJECT_NAME}
 )
