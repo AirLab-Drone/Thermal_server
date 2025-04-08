@@ -7,7 +7,6 @@ from thermal_msgs.msg import ThermalAlert
 
 from mailjet_rest import Client
 from dotenv import load_dotenv
-from pathlib import Path
 import os
 
 
