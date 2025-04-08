@@ -174,7 +174,7 @@ class Thermal_camera_to_world(Node):
                 x = int(x_border + row * x_offset)
                 y = int(y_border + col * y_offset)
                 points_board.append((x, y))
-                cv2.circle(self.thermal_image_debug, (x, y), radius=3, color=RED, thickness=-1)  # 紅色實心圓
+                cv2.circle(self.thermal_image_debug, (x, y), radius=1, color=BLUE, thickness=-1)  # 紅色實心圓
 
         
         # self.get_logger().info(f"{str(points_board)}")

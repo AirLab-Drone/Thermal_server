@@ -9,5 +9,7 @@ bag_files/
 # Thermal camera log file
 *.log
 
+# API key
+*.env
 
 __pycache__

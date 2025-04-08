@@ -6,7 +6,10 @@ from rclpy.duration import Duration
 from thermal_msgs.msg import ThermalAlert
 
 from mailjet_rest import Client
+from dotenv import load_dotenv
+from pathlib import Path
 import os
+
 
 
 class SendFireAlert(Node):
@@ -26,9 +29,26 @@ class SendFireAlert(Node):
 
         self.timer = self.create_timer(60.0, self.cooldown_countdown)  # 每分鐘倒數計時
 
+
         # 讀取 Mailjet API 金鑰與密鑰
-        self.mailjet_api_key = "748bf793493ffd2369d9e9e822552e32"
-        self.mailjet_api_secret = "992763725dd166f2ade229b0b1984afb"
+        dotenv_path = os.getcwd() + "/src/check_status/config/.env" #/ "config" / ".env"
+        load_dotenv(dotenv_path)
+
+        # self.get_logger().info(str(dotenv_path))
+
+
+        # 讀取 Mailjet API 金鑰與密鑰
+        self.mailjet_api_key = os.getenv("MAILJET_API_KEY")
+        self.mailjet_api_secret = os.getenv("MAILJET_API_SECRET")
+
+        # self.get_logger().info(self.mailjet_api_key)
+        # self.get_logger().info(self.mailjet_api_secret)
+
+
+        if not self.mailjet_api_key or not self.mailjet_api_secret:
+            self.get_logger().error("Mailjet API key or secret is not set.")
+            raise RuntimeError("Missing Mailjet API credentials.")
+
 
         if not self.mailjet_api_key or not self.mailjet_api_secret:
             self.get_logger().error("Mailjet API key or secret is not set.")

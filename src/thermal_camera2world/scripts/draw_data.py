@@ -91,4 +91,5 @@ def UWB_to_pixel(device="IPT430M"):
 
 
 if __name__ == "__main__":
-    UWB_to_pixel("DS4025FT")
+    UWB_to_pixel("IPT430M")
+    # UWB_to_pixel("DS4025FT")
