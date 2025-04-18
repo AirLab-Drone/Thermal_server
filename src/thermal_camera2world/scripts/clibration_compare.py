@@ -6,6 +6,7 @@ import rclpy
 from rclpy.node import Node
 from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
+import os
 
 
 class clibration_compare(Node):
@@ -23,14 +24,17 @@ class clibration_compare(Node):
         self.bridge = CvBridge()
 
         self.camera_matrix = np.array(
-            [[539.02076073,   0.        , 192.92292919],
-            [  0.        , 541.1118448 , 147.27743381],
+            [[536.74326964,   0.        , 197.52180702],
+            [  0.        , 540.84763833, 149.22759103],
             [  0.        ,   0.        ,   1.        ]]
         )
 
         self.dist_coeffs = np.array(
-            [[-0.36509059,  0.27282213,  0.00089947, -0.00072984, -0.53693823]]
+            [[-3.94827407e-01,  7.48477869e-01, -2.54931624e-03, -6.11382433e-04, -2.45142323e+00]]
         )
+
+        device = 'coin417rg2'
+        self.save_path = os.path.expanduser(f'~/calibration_data/{device}')
 
 
     def image_callback(self, msg):
@@ -43,7 +47,16 @@ class clibration_compare(Node):
             cv2.imshow("origin_image", cv_image)
             cv2.imshow("undistorted_image", undistorted_image)
 
-            cv2.waitKey(1)
+            key = cv2.waitKey(1) & 0xFF
+
+
+            if key == ord('p'):
+                
+                if cv2.imwrite(os.path.join(self.save_path, f'origin_image.jpg'), cv_image):
+                    print(f"✅ 原始影像已儲存成功")
+                if cv2.imwrite(os.path.join(self.save_path, f'undistorted_image.jpg'), undistorted_image):
+                    print(f"✅ 去畸變影像已儲存成功")
+
 
         except Exception as e:
             self.get_logger().error(f"❌ Error processing image: {e}")
