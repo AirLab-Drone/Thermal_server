@@ -12,17 +12,24 @@ class clibration_compare(Node):
     def __init__(self):
         super().__init__('chessboard_detector')
         self.subscription = self.create_subscription(
-            Image, '/thermal_IPT430M/thermal_image', self.image_callback, 10)
+            Image, 
+            # '/thermal_IPT430M/thermal_image', 
+            # '/thermal_DS4025FT/thermal_image', 
+            '/coin417rg2_thermal/thermal_image',
+            self.image_callback, 
+            10
+        )
+
         self.bridge = CvBridge()
 
         self.camera_matrix = np.array(
-                [[658.88240558,   0.        , 242.4072513 ],
-                [  0.        , 665.44992269, 177.90754703],
-                [  0.        ,   0.        ,   1.        ]]
+            [[539.02076073,   0.        , 192.92292919],
+            [  0.        , 541.1118448 , 147.27743381],
+            [  0.        ,   0.        ,   1.        ]]
         )
 
         self.dist_coeffs = np.array(
-            [[-4.17136521e-01, -6.40505148e-01,  4.40717899e-04,  5.57044934e-04, 3.36013273e+00]]
+            [[-0.36509059,  0.27282213,  0.00089947, -0.00072984, -0.53693823]]
         )
 
 

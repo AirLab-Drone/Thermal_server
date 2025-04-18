@@ -90,6 +90,50 @@ def UWB_to_pixel(device="IPT430M"):
 
 
 
+def read_matrix():
+
+    # 指定儲存的 npz 路徑
+    device = 'coin417rg2'
+    npz_path = os.path.expanduser(f'~/calibration_data/{device}/exp3/calibration_data.npz')
+
+    # 讀取 npz 檔案
+    data = np.load(npz_path, allow_pickle=True)
+
+    # 取得每個變數
+    obj_points=data['obj_points']
+    img_points=data['img_points']
+    ret=data['ret']
+    camera_matrix = data['camera_matrix']
+    dist_coeffs = data['dist_coeffs']
+    rvecs = data['rvecs']
+    tvecs = data['tvecs']
+
+    # print("📌 img_points:")
+    # for i, img_point in enumerate(img_points):
+    #     print(f"img_points[{i}]:\n{img_point}")
+
+    print("📌ret:")
+    print(ret)
+
+    # 印出內容
+    print("📌 相機內參矩陣 (camera_matrix):")
+    print(camera_matrix)
+
+    print("\n📌 畸變係數 (dist_coeffs):")
+    print(dist_coeffs)
+
+    print("\n📌 旋轉向量 (rvecs):")
+    for i, rvec in enumerate(rvecs):
+        print(f"rvec[{i}]:\n{rvec}")
+
+    print("\n📌 平移向量 (tvecs):")
+    for i, tvec in enumerate(tvecs):
+        print(f"tvec[{i}]:\n{tvec}")
+
+
+
+
 if __name__ == "__main__":
-    UWB_to_pixel("IPT430M")
+    # UWB_to_pixel("IPT430M")
     # UWB_to_pixel("DS4025FT")
+    read_matrix()

@@ -6,6 +6,7 @@ from sensor_msgs.msg import Image
 from cv_bridge import CvBridge
 import cv2
 import numpy as np
+import os
 
 class CameraCalibration(Node):
     def __init__(self):
@@ -14,13 +15,18 @@ class CameraCalibration(Node):
         # 訂閱熱像儀影像
         self.subscription = self.create_subscription(
             Image, 
-            '/thermal_IPT430M/thermal_image', 
+            # '/thermal_IPT430M/thermal_image', 
+            # '/thermal_DS4025FT/thermal_image', 
+            '/coin417rg2_thermal/thermal_image',
             self.image_callback, 
             10
         )
         self.subscription  
 
         self.bridge = CvBridge()
+        
+        device = 'coin417rg2'
+        self.save_path = os.path.expanduser(f'~/calibration_data/{device}/exp3')
 
 
         col = 3
@@ -51,7 +57,6 @@ class CameraCalibration(Node):
         # self.detector = cv2.SimpleBlobDetector_create(self.params)
 
         cv2.namedWindow("Trackbars")
-        cv2.createTrackbar("Threshold", "Trackbars", 0, 255, self.on_trackbar)
 
         cv2.createTrackbar("Min Area", "Trackbars", 10, 5000, self.nothing)  # minArea
         cv2.createTrackbar("Max Area", "Trackbars", 5000, 5000, self.nothing)  # maxArea
@@ -73,16 +78,8 @@ class CameraCalibration(Node):
 
     def preprocess_image(self, image):
 
-        threshold_value = cv2.getTrackbarPos("Threshold", "Trackbars")
-
-        inverted = cv2.bitwise_not(image)
-        gray = cv2.bitwise_not(inverted)
-
+        gray = cv2.bitwise_not(image)
         gray_blurred = cv2.medianBlur(gray, 5)
-
-
-        # _, binary = cv2.threshold(gray_blurred, threshold_value, 255, cv2.THRESH_BINARY)
-
 
         return gray_blurred
     
@@ -137,15 +134,20 @@ class CameraCalibration(Node):
 
             if key == ord('p'):
 
+                
                 # 如果偵測到圓點，將它們加入 img_points
                 self.img_points.append(centers)
                 self.obj_points.append(self.objp)
+                img_name = f'result_image_{str(self.stored_images)}.jpg'
+                cv2.imwrite(os.path.join(self.save_path, img_name), image)
+
 
                 # 繪製出來的角點
                 self.stored_images += 1
                 self.get_logger().info(f"✅ 儲存了 {self.stored_images} 張影像")
+
                 
-                if len(self.obj_points) >= 10:
+                if len(self.obj_points) >= 15:
                     self.calibrate_camera()
 
 
@@ -170,10 +172,10 @@ class CameraCalibration(Node):
 
             processed_image = self.preprocess_image(cv_image)
 
-            # 嘗試標定板偵測
+            # # 嘗試標定板偵測
             Circle_Grid, keypoint, Chessboard_img= self.detect_circle_grid(processed_image)
-            cv2.imshow("processed_image", processed_image)
             cv2.imshow("origin_image", cv_image)
+            cv2.imshow("processed_image", processed_image)
             cv2.imshow("Detected Circle Grid", Circle_Grid)
             cv2.imshow("Chessboard_img", Chessboard_img)
 
@@ -213,10 +215,25 @@ class CameraCalibration(Node):
             # 使用 np.array2string() 格式化矩陣，並顯示逗號
             camera_matrix_str = np.array2string(camera_matrix, separator=', ')
             dist_coeffs_str = np.array2string(dist_coeffs, separator=', ')
+            # rvecs_str = np.array2string(rvecs, separator=', ')
+            # tvecs_str = np.array2string(tvecs, separator=', ')
 
             # 印出矩陣與畸變係數
             self.get_logger().info(f"📌 相機內參矩陣:\n{camera_matrix_str}")
             self.get_logger().info(f"📌 畸變係數:\n{dist_coeffs_str}")
+            self.get_logger().info(f"📌 rvecs:\n{rvecs}")
+            self.get_logger().info(f"📌 tvecs:\n{tvecs}")
+
+            np.savez(os.path.join(self.save_path, 'calibration_data.npz'),
+            obj_points=self.obj_points,
+            img_points=self.img_points,
+            ret=ret,
+            camera_matrix=camera_matrix,
+            dist_coeffs=dist_coeffs,
+            rvecs=rvecs,
+            tvecs=tvecs)
+
+
 
             # 儲存標定結果
             # np.savez("calibration_data.npz", camera_matrix=camera_matrix, dist_coeffs=dist_coeffs)
