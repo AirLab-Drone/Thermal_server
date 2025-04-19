@@ -15,9 +15,9 @@ class CameraCalibration(Node):
         # 訂閱熱像儀影像
         self.subscription = self.create_subscription(
             Image, 
-            # '/thermal_IPT430M/thermal_image', 
+            '/thermal_IPT430M/thermal_image', 
             # '/thermal_DS4025FT/thermal_image', 
-            '/coin417rg2_thermal/thermal_image',
+            # '/coin417rg2_thermal/thermal_image',
             self.image_callback, 
             10
         )
@@ -25,7 +25,7 @@ class CameraCalibration(Node):
 
         self.bridge = CvBridge()
         
-        device = 'coin417rg2'
+        device = 'ipt430m'
         self.save_path = os.path.expanduser(f'~/calibration_data/{device}/exp3')
 
 
@@ -124,13 +124,16 @@ class CameraCalibration(Node):
         key = cv2.waitKey(1) & 0xFF
         if ret:
 
-            for i, center in enumerate(centers):
-                x, y = center[0]  # 提取每個圓心的 x 和 y 座標
-                cv2.putText(Chessboard_img, str(i + 1), (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX, 
-                            0.6, (0, 255, 0), 2, cv2.LINE_AA) 
+            # for i, center in enumerate(centers):
+            #     x, y = center[0]  # 提取每個圓心的 x 和 y 座標
+            #     cv2.putText(Chessboard_img, str(i + 1), (int(x), int(y)), cv2.FONT_HERSHEY_SIMPLEX, 
+            #                 0.6, (0, 255, 0), 2, cv2.LINE_AA) 
             cv2.drawChessboardCorners(Chessboard_img, self.pattern_size, centers, ret)
 
+            if key == ord('c'):
 
+                if cv2.imwrite(os.path.join(self.save_path, '..', 'chessboard_img.jpg'), Chessboard_img):
+                    print(f'chessboard img save')
 
             if key == ord('p'):
 
@@ -140,6 +143,13 @@ class CameraCalibration(Node):
                 self.obj_points.append(self.objp)
                 img_name = f'result_image_{str(self.stored_images)}.jpg'
                 cv2.imwrite(os.path.join(self.save_path, img_name), image)
+                
+
+                chessboard_img_name = f'chessboard_img_{str(self.stored_images)}.jpg'
+                if cv2.imwrite(os.path.join(self.save_path, 'chessboard_img', chessboard_img_name), Chessboard_img):
+                    print(f'chessboard img save')
+                
+
 
 
                 # 繪製出來的角點
@@ -179,22 +189,6 @@ class CameraCalibration(Node):
             cv2.imshow("Detected Circle Grid", Circle_Grid)
             cv2.imshow("Chessboard_img", Chessboard_img)
 
-            # print(len(keypoint))
-            
-            # keypoints_float = np.array([kp.pt for kp in keypoint], dtype=np.float32)
-
-
-            # key = cv2.waitKey(1) & 0xFF
-            # if key == ord('p'):
-            #     if len(keypoints_float) == self.pattern_size[0] * self.pattern_size[1]:
-            #         self.img_points.append(keypoints_float)
-            #         self.obj_points.append(self.objp)
-            #         self.stored_images += 1
-            #         self.get_logger().info(f"✅ 儲存了 {self.stored_images} 張影像")
-                    
-            #         # 如果已儲存 20 張影像，開始標定
-            #         if self.stored_images >= 10:
-            #             self.calibrate_camera()
 
             cv2.waitKey(1)
 

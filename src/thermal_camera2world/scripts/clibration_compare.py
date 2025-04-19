@@ -14,9 +14,9 @@ class clibration_compare(Node):
         super().__init__('chessboard_detector')
         self.subscription = self.create_subscription(
             Image, 
-            # '/thermal_IPT430M/thermal_image', 
+            '/thermal_IPT430M/thermal_image', 
             # '/thermal_DS4025FT/thermal_image', 
-            '/coin417rg2_thermal/thermal_image',
+            # '/coin417rg2_thermal/thermal_image',
             self.image_callback, 
             10
         )
@@ -24,17 +24,18 @@ class clibration_compare(Node):
         self.bridge = CvBridge()
 
         self.camera_matrix = np.array(
-            [[536.74326964,   0.        , 197.52180702],
-            [  0.        , 540.84763833, 149.22759103],
+            [[652.12848893,   0.        , 240.25644949],
+            [  0.        , 654.49403137, 182.4022764 ],
             [  0.        ,   0.        ,   1.        ]]
         )
 
         self.dist_coeffs = np.array(
-            [[-3.94827407e-01,  7.48477869e-01, -2.54931624e-03, -6.11382433e-04, -2.45142323e+00]]
+            [[-4.72845518e-01,  1.68374619e-01, -4.57341634e-04,  1.38664409e-03, 3.63048508e-01]]
         )
 
-        device = 'coin417rg2'
-        self.save_path = os.path.expanduser(f'~/calibration_data/{device}')
+        device = 'ipt430m'
+        num_exp = 3
+        self.save_path = os.path.expanduser(f'~/calibration_data/{device}/exp{str(num_exp)}/calibraion_result')
 
 
     def image_callback(self, msg):
@@ -42,8 +43,31 @@ class clibration_compare(Node):
         try:
             cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='mono8')
 
+            h, w = cv_image.shape[:2]
+            scale = 1
+            scaled_size = (w * scale, h * scale)
+
+
+            newcameramtx, roi = cv2.getOptimalNewCameraMatrix(self.camera_matrix, self.dist_coeffs, scaled_size, 1, scaled_size)
+
+
+            # 🧠 調整主點（cx, cy）到新圖像的中心
+            # newcameramtx[0, 2] = scaled_size[0] / 2
+            # newcameramtx[1, 2] = scaled_size[1] / 2
+
             undistorted_image = cv2.undistort(cv_image, self.camera_matrix, self.dist_coeffs)
 
+            # undistort
+            mapx, mapy = cv2.initUndistortRectifyMap(self.camera_matrix, self.dist_coeffs, None, newcameramtx, scaled_size, cv2.CV_32FC1)
+            dst = cv2.remap(cv_image, mapx, mapy, cv2.INTER_LINEAR)
+
+
+
+            # crop the image
+            # x, y, w, h = roi
+            # dst = dst[y:y+h, x:x+w]
+
+            cv2.imshow('undistorted_image_withBlack', dst)
             cv2.imshow("origin_image", cv_image)
             cv2.imshow("undistorted_image", undistorted_image)
 
@@ -56,6 +80,9 @@ class clibration_compare(Node):
                     print(f"✅ 原始影像已儲存成功")
                 if cv2.imwrite(os.path.join(self.save_path, f'undistorted_image.jpg'), undistorted_image):
                     print(f"✅ 去畸變影像已儲存成功")
+                if cv2.imwrite(os.path.join(self.save_path, f'undistorted_image_withBlack.jpg'), dst):
+                    print(f"✅ 去畸變影像(黑邊)已儲存成功")
+
 
 
         except Exception as e:
