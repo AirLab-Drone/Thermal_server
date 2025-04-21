@@ -14,8 +14,8 @@ class clibration_compare(Node):
         super().__init__('chessboard_detector')
         self.subscription = self.create_subscription(
             Image, 
-            '/thermal_IPT430M/thermal_image', 
-            # '/thermal_DS4025FT/thermal_image', 
+            # '/thermal_IPT430M/thermal_image', 
+            '/thermal_DS4025FT/thermal_image', 
             # '/coin417rg2_thermal/thermal_image',
             self.image_callback, 
             10
@@ -24,16 +24,17 @@ class clibration_compare(Node):
         self.bridge = CvBridge()
 
         self.camera_matrix = np.array(
-            [[652.12848893,   0.        , 240.25644949],
-            [  0.        , 654.49403137, 182.4022764 ],
-            [  0.        ,   0.        ,   1.        ]]
+[[1.90154620e+03, 0.00000000e+00, 4.04211204e+02],
+ [0.00000000e+00, 1.86988014e+03, 1.00406185e+02],
+ [0.00000000e+00, 0.00000000e+00, 1.00000000e+00]]
         )
 
         self.dist_coeffs = np.array(
-            [[-4.72845518e-01,  1.68374619e-01, -4.57341634e-04,  1.38664409e-03, 3.63048508e-01]]
+[[ 2.08244236e+00, -1.40233268e+01,  2.18963499e-03,  2.07644024e-01,
+   7.21430708e+01]]
         )
 
-        device = 'ipt430m'
+        device = 'ds4025ft'
         num_exp = 3
         self.save_path = os.path.expanduser(f'~/calibration_data/{device}/exp{str(num_exp)}/calibraion_result')
 
@@ -41,7 +42,7 @@ class clibration_compare(Node):
     def image_callback(self, msg):
         """處理接收到的影像，並執行標定"""
         try:
-            cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='mono8')
+            cv_image = self.bridge.imgmsg_to_cv2(msg, desired_encoding='bgr8')
 
             h, w = cv_image.shape[:2]
             scale = 1

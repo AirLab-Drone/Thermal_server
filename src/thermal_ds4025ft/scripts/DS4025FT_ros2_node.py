@@ -26,6 +26,7 @@ class DS4025FT_ros2_node(Node):
         self.thermal_camera = Thermal_DS4025FT(ip_address=self.ip_address, account=self.account, password=self.password)
 
         self.vcap = self.thermal_camera.getThermalStream()
+        # self.vcap = self.thermal_camera.getThermalStream(channel=2, subtype=1)
 
         self.bridge = CvBridge()
 

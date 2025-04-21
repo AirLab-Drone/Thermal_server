@@ -93,7 +93,7 @@ def UWB_to_pixel(device="IPT430M"):
 def read_matrix():
 
     # 指定儲存的 npz 路徑
-    device = 'coin417rg2'
+    device = 'ds4025ft'
     npz_path = os.path.expanduser(f'~/calibration_data/{device}/exp3/calibration_data.npz')
 
     # 讀取 npz 檔案

@@ -15,8 +15,8 @@ class CameraCalibration(Node):
         # 訂閱熱像儀影像
         self.subscription = self.create_subscription(
             Image, 
-            '/thermal_IPT430M/thermal_image', 
-            # '/thermal_DS4025FT/thermal_image', 
+            # '/thermal_IPT430M/thermal_image', 
+            '/thermal_DS4025FT/thermal_image', 
             # '/coin417rg2_thermal/thermal_image',
             self.image_callback, 
             10
@@ -25,7 +25,7 @@ class CameraCalibration(Node):
 
         self.bridge = CvBridge()
         
-        device = 'ipt430m'
+        device = 'ds4025ft'
         self.save_path = os.path.expanduser(f'~/calibration_data/{device}/exp3')
 
 
@@ -58,6 +58,11 @@ class CameraCalibration(Node):
 
         cv2.namedWindow("Trackbars")
 
+
+        cv2.createTrackbar('Contrast (alpha)', 'Trackbars', 100, 300, self.nothing)  # alpha 范圍 1~3
+        cv2.createTrackbar('Brightness (beta)', 'Trackbars', 50, 100, self.nothing)  # beta 范圍 -50~50
+        cv2.createTrackbar('THRESH', 'Trackbars', 0, 255, self.nothing)  # beta 范圍 -50~50
+
         cv2.createTrackbar("Min Area", "Trackbars", 10, 5000, self.nothing)  # minArea
         cv2.createTrackbar("Max Area", "Trackbars", 5000, 5000, self.nothing)  # maxArea
         cv2.createTrackbar("Min Circularity", "Trackbars", 70, 100, self.nothing)  # minCircularity
@@ -77,11 +82,28 @@ class CameraCalibration(Node):
         pass
 
     def preprocess_image(self, image):
+        
+        # 獲取拖動條的值，並調整 alpha 和 beta
+        alpha = cv2.getTrackbarPos('Contrast (alpha)', 'Trackbars') / 100.0  # alpha: 1.0 到 3.0
+        beta = cv2.getTrackbarPos('Brightness (beta)', 'Trackbars') - 50     # beta: -50 到 50
+        thresh = cv2.getTrackbarPos('THRESH', 'Trackbars')
+        
+
 
         gray = cv2.bitwise_not(image)
-        gray_blurred = cv2.medianBlur(gray, 5)
 
-        return gray_blurred
+        contrast_img = cv2.convertScaleAbs(gray, alpha=alpha, beta=beta)
+        # equalize_img = cv2.equalizeHist(contrast_img)
+        # gray = cv2.bitwise_not(gray)
+
+        ret, result = cv2.threshold(contrast_img, thresh, 255, cv2.THRESH_TOZERO)
+        # threshold_img = cv2.adaptiveThreshold(gray, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_TOZERO, 11, 2)
+
+
+
+        # gray_blurred = cv2.medianBlur(contrast_img, 5)
+
+        return result
     
 
     def detect_circle_grid(self, image):
