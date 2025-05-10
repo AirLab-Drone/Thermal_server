@@ -11,6 +11,8 @@ import os
 def generate_launch_description():
 
     thermal_ipt430m_share = get_package_share_directory("thermal_ipt430m")
+    thermal_camera2world_share = get_package_share_directory("thermal_camera2world")
+
 
     thermal_launch_path = os.path.join(
         thermal_ipt430m_share,
@@ -18,32 +20,58 @@ def generate_launch_description():
         "thermal_ipt430m.launch.py",
     )
 
+
     yaml_path = os.path.join(
-        get_package_share_directory("thermal_camera2world"),
+        thermal_camera2world_share,
         "config",
         "camera2world.yaml",
     )
+    print(yaml_path)
+
+
+    distortion_yaml_path = os.path.join(thermal_camera2world_share, "config", "distortion_exp.yaml")
+    undistortion_yaml_path = os.path.join(thermal_camera2world_share, "config", "undistortion_exp.yaml")
+
+
+    undistortion_node = Node(
+        package="thermal_camera2world",
+        executable="clibration_compare.py",
+        namespace="thermal_IPT430M",
+        name="undistortion_image",
+        output="screen",
+    )
+
 
 
     thermal_camera2world_node = Node(
         package="thermal_camera2world",
         executable="uwb_experiment.py",
         namespace="thermal_IPT430M",
-        name="thermal_camera_to_world",
+        name="uwb_experiment",
         output="screen",
-        parameters = [yaml_path]
+        parameters = [
+            distortion_yaml_path,
+            {"undistortion": False},
+        ]
     )
+
+
     # 使用 TimerAction 包裹節點，延遲啟動
     delayed_node = TimerAction(
         period=3.0,
         actions=[thermal_camera2world_node],
     )
 
+
+
     return LaunchDescription(
         [
             IncludeLaunchDescription(
                 PythonLaunchDescriptionSource(thermal_launch_path)
             ),
+
+            undistortion_node,
+
             delayed_node,  # 延遲啟動的節點
         ]
     )

@@ -1,4 +1,4 @@
-/thermal_DS4025FT/thermal_camera_to_world:
+/thermal_DS4025FT/uwb_experiment:
   ros__parameters:
     Alert_Waiting_Time: 5
     Thermal_LowerLeft:
@@ -26,25 +26,25 @@
     World_UpperRight:
     - 8.5
     - 5.1
-/thermal_IPT430M/thermal_camera_to_world:
+/thermal_IPT430M/uwb_experiment:
   ros__parameters:
     Alert_Waiting_Time: 5
     Thermal_LowerLeft:
-    - 55
-    - 74
+    - 54
+    - 54
     Thermal_LowerRight:
-    - 468
-    - 40
+    - 475
+    - 68
     Thermal_UpperLeft:
-    - 38
-    - 341
-    Thermal_UpperRight:
-    - 480
+    - 76
     - 345
+    Thermal_UpperRight:
+    - 494
+    - 358
     Threshold_Temperature: 50.0
     World_LowerLeft:
-    - 45.0
-    - 78.0
+    - 0.0
+    - 5.0
     World_LowerRight:
     - 5.0
     - 5.0
@@ -52,5 +52,5 @@
     - 0.0
     - 0.0
     World_UpperRight:
-    - 1.0
-    - 1.0
+    - 5.0
+    - 0.0

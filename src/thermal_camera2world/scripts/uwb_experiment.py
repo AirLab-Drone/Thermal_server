@@ -47,13 +47,12 @@ class Thermal_camera_to_world(Node):
         if not hasattr(self, "saved_points"):
             self.saved_points = False
 
-
         # -------------------------------- Parameters -------------------------------- #
         # 世界座標四個角點
         self.declare_parameter("World_UpperLeft", [0.0, 0.0])
-        self.declare_parameter("World_UpperRight", [1.0, 5.0])
-        self.declare_parameter("World_LowerRight", [45.0, 0.0])
-        self.declare_parameter("World_LowerLeft", [0.0, 6.0])
+        self.declare_parameter("World_UpperRight", [0.0, 0.0])
+        self.declare_parameter("World_LowerRight", [0.0, 0.0])
+        self.declare_parameter("World_LowerLeft", [0.0, 0.0])
 
         # 像素座標四個角點
         self.declare_parameter("Thermal_UpperLeft", [0, 0])
@@ -108,8 +107,15 @@ class Thermal_camera_to_world(Node):
             .integer_array_value
         )
 
+        
+
         target_area = np.array(
-            [world_upper_left, world_upper_right, world_lower_right, world_lower_left],
+            [
+                world_upper_left, 
+                world_upper_right, 
+                world_lower_right, 
+                world_lower_left
+            ],
             dtype=np.float32,
         )
         selected_area = np.array(
@@ -123,28 +129,39 @@ class Thermal_camera_to_world(Node):
         )
         # self.get_logger().info(f"{target_area}, {selected_area}")
 
+        self.homography_matrix, _ = cv2.findHomography(
+            selected_area, target_area
+        )  # numpy array
 
-        self.homography_matrix, _ = cv2.findHomography(selected_area, target_area)  # numpy array
+        self.get_logger().info(f"target_area: {target_area}, selected_area: {selected_area}")
+        self.get_logger().info(f"homography_matrix: {self.homography_matrix}")
 
-        
+        self.declare_parameter(
+            "undistortion",
+            False,
+        )
+        self.IsUnDistortion = (
+            self.get_parameter("undistortion").get_parameter_value().bool_value
+        )
+
+        self.sub_topic_name = "thermal_image"
+        if self.IsUnDistortion:
+            self.sub_topic_name = "clibration_image"
+
 
         # ------------------------------- Thermal image ------------------------------ #
         self.sub_thermal_image = self.create_subscription(
-            Image, "thermal_image", self.thermal_image_callback, 10
+            Image, self.sub_topic_name, self.thermal_image_callback, 10
         )
         self.sub_thermal_image  # prevent unused variable warning
         self.cv_bridge = CvBridge()
         self.thermal_image = None
         self.thermal_image_debug = None
 
-
         # ---------------------------------- opencv windows -------------------------- #
         self.thermal_debug_image_window_name = "Thermal Image Debug"
 
         cv2.namedWindow(self.thermal_debug_image_window_name, cv2.WINDOW_NORMAL)
-
-
-
 
     def thermal_image_callback(self, msg) -> None:
 
@@ -152,46 +169,43 @@ class Thermal_camera_to_world(Node):
             msg, desired_encoding="passthrough"
         )
 
-        points_row = 6
+        points_row = 5
         points_column = 4
 
-        x_border = 50   #pixel
-        y_border = 50
+        x_border = y_border = 50  # pixel
 
-        
         height, width = self.thermal_image.shape[:2]
 
         self.thermal_image_debug = self.thermal_image.copy()
 
         points_board = []
 
-        x_offset = (width - (2 * x_border)) / (points_row-1)
-        y_offset = (height - (2 * y_border)) / (points_column-1)
+        x_offset = (width - (2 * x_border)) / (points_row - 1)
+        y_offset = (height - (2 * y_border)) / (points_column - 1)
 
-            
         for col in range(points_column):
             for row in range(points_row):
                 x = int(x_border + row * x_offset)
                 y = int(y_border + col * y_offset)
                 points_board.append((x, y))
-                cv2.circle(self.thermal_image_debug, (x, y), radius=1, color=BLUE, thickness=-1)  # 紅色實心圓
+                cv2.circle(
+                    self.thermal_image_debug, (x, y), radius=1, color=GREEN, thickness=-1
+                )
 
-        
         # self.get_logger().info(f"{str(points_board)}")
-        
-        
 
         # 將熱點像素座標轉換到世界座標
 
         pixel_points_np = np.array(points_board, dtype=np.float32).reshape(-1, 1, 2)
 
         if self.homography_matrix is not None:
-            transformed_points = cv2.perspectiveTransform(pixel_points_np, self.homography_matrix)
+            transformed_points = cv2.perspectiveTransform(
+                pixel_points_np, self.homography_matrix
+            )
 
         # 拆成 list，並存下或印出來
         world_points = [tuple(pt[0]) for pt in transformed_points]
         # self.get_logger().info(f"世界座標點: {str(world_points)}")
-
 
         if not self.saved_points:
             # 轉為 numpy 陣列
@@ -199,9 +213,24 @@ class Thermal_camera_to_world(Node):
             world_np = np.array(world_points, dtype=np.float32)  # shape (N, 2)
 
             # 設定儲存路徑
+
             base_path = os.path.expanduser("~")  # 儲存在使用者家目錄
-            pixel_path = os.path.join(base_path, f"{str(self.current_namespace[1:])}_pixel_points.npy")
-            world_path = os.path.join(base_path, f"{str(self.current_namespace[1:])}_world_points.npy")
+            
+            if self.IsUnDistortion:
+                pixel_path = os.path.join(
+                    base_path, f"{str(self.current_namespace[1:])}_UnDistortion_pixel_points.npy"
+                )
+                world_path = os.path.join(
+                    base_path, f"{str(self.current_namespace[1:])}_UnDistortion_predict_world_points.npy"
+                )
+            else:
+                pixel_path = os.path.join(
+                    base_path, f"{str(self.current_namespace[1:])}_Distortion_pixel_points.npy"
+                )
+                world_path = os.path.join(
+                    base_path, f"{str(self.current_namespace[1:])}_Distortion_predict_world_points.npy"
+                )
+
 
             # 儲存
             np.save(pixel_path, pixel_np)
@@ -212,12 +241,9 @@ class Thermal_camera_to_world(Node):
 
             self.saved_points = True
 
-
         cv2.imshow(self.thermal_debug_image_window_name, self.thermal_image_debug)
 
         cv2.waitKey(1)
-
-
 
 
 def main(args=None):

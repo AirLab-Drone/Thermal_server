@@ -93,8 +93,8 @@ def UWB_to_pixel(device="IPT430M"):
 def read_matrix():
 
     # 指定儲存的 npz 路徑
-    device = 'ds4025ft'
-    npz_path = os.path.expanduser(f'~/calibration_data/{device}/exp3/calibration_data.npz')
+    device = 'ipt430m'
+    npz_path = os.path.expanduser(f'~/calibration_data/{device}/exp1/calibration_data.npz')
 
     # 讀取 npz 檔案
     data = np.load(npz_path, allow_pickle=True)
@@ -115,20 +115,25 @@ def read_matrix():
     print("📌ret:")
     print(ret)
 
+
+
+    camera_matrix_str = np.array2string(camera_matrix, separator=', ')
+    dist_coeffs_str = np.array2string(dist_coeffs, separator=', ')
+
     # 印出內容
     print("📌 相機內參矩陣 (camera_matrix):")
-    print(camera_matrix)
+    print(camera_matrix_str)
 
     print("\n📌 畸變係數 (dist_coeffs):")
-    print(dist_coeffs)
+    print(dist_coeffs_str)
 
-    print("\n📌 旋轉向量 (rvecs):")
-    for i, rvec in enumerate(rvecs):
-        print(f"rvec[{i}]:\n{rvec}")
+    # print("\n📌 旋轉向量 (rvecs):")
+    # for i, rvec in enumerate(rvecs):
+    #     print(f"rvec[{i}]:\n{rvec}")
 
-    print("\n📌 平移向量 (tvecs):")
-    for i, tvec in enumerate(tvecs):
-        print(f"tvec[{i}]:\n{tvec}")
+    # print("\n📌 平移向量 (tvecs):")
+    # for i, tvec in enumerate(tvecs):
+    #     print(f"tvec[{i}]:\n{tvec}")
 
 
 

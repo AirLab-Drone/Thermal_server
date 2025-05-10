@@ -29,11 +29,37 @@ class SetupCamera2WorldPoint(Node):
     def __init__(self):
         super().__init__("setup_camera2world_point")
         self.current_namespace = self.get_namespace()  # 設為類別屬性
+        self.current_name = self.get_name()
         self.get_logger().info(f"Current namespace: {self.current_namespace}")
+
+        self.declare_parameter(
+            "config_file",
+            os.getcwd() + "/src/thermal_camera2world/config/camera2world.yaml",
+        )
+        self.config_file = (
+            self.get_parameter("config_file").get_parameter_value().string_value
+        )
+        
+        self.get_logger().info(f"Loaded config_file: {self.config_file}")
+
+
+        self.declare_parameter(
+            "undistortion",
+            False,
+        )
+        self.IsUnDistortion = (
+            self.get_parameter("undistortion").get_parameter_value().bool_value
+        )
+
+        self.sub_topic_name = "thermal_image"
+        if self.IsUnDistortion:
+            self.sub_topic_name = "clibration_image"
+
+
 
         # ------------------------------- Thermal image ------------------------------ #
         self.sub_thermal_image = self.create_subscription(
-            Image, "thermal_image", self.thermal_image_callback, 10
+            Image, self.sub_topic_name, self.thermal_image_callback, 10
         )
         self.sub_thermal_image  # prevent unused variable warning
         self.cv_bridge = CvBridge()
@@ -46,19 +72,12 @@ class SetupCamera2WorldPoint(Node):
 
         self.pixel_and_world_coordinate = []
 
-        self.declare_parameter(
-            "config_file",
-            os.getcwd() + "/src/thermal_camera2world/config/camera2world.yaml",
-        )
-        self.config_file = (
-            self.get_parameter("config_file").get_parameter_value().string_value
-        )
-
         # Setup mouse callback
         cv2.namedWindow(self.thermal_debug_image_window_name, cv2.WINDOW_NORMAL)
         cv2.setMouseCallback(
             self.thermal_debug_image_window_name, self.SelectFourConerCallback
         )
+
 
     def thermal_image_callback(self, msg) -> None:
 
@@ -113,7 +132,7 @@ class SetupCamera2WorldPoint(Node):
                 config_data = {}  # 如果檔案不存在，初始化為空字典
 
             # 構建新的 namespace 資料
-            namespace_key = f'{self.current_namespace}/thermal_camera_to_world'
+            namespace_key = f'{self.current_namespace}/{self.current_name}'
             config_data[namespace_key] = {
                 "ros__parameters": {
                     "World_UpperLeft": world_points[0],

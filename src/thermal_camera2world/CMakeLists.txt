@@ -40,6 +40,7 @@ install(PROGRAMS
   scripts/uwb_experiment.py
   scripts/camera_calibration_circle.py
   scripts/clibration_compare.py
+
   DESTINATION lib/${PROJECT_NAME}
 )
 
