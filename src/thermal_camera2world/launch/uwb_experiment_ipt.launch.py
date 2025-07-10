@@ -50,8 +50,8 @@ def generate_launch_description():
         name="uwb_experiment",
         output="screen",
         parameters = [
-            distortion_yaml_path,
-            {"undistortion": False},
+            undistortion_yaml_path,
+            {"undistortion": True},
         ]
     )
 

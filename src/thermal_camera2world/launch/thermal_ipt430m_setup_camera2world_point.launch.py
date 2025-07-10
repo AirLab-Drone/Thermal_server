@@ -52,8 +52,8 @@ def generate_launch_description():
         namespace="thermal_IPT430M",
         name="uwb_experiment",
         parameters=[{
-            'config_file':distortion_yaml_path,
-            'undistortion': False,
+            'config_file':undistortion_yaml_path,
+            'undistortion': True,
             }],
         output="screen",
     )

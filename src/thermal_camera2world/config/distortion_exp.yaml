@@ -30,27 +30,27 @@
   ros__parameters:
     Alert_Waiting_Time: 5
     Thermal_LowerLeft:
-    - 54
-    - 54
+    - 115
+    - 366
     Thermal_LowerRight:
-    - 475
-    - 68
+    - 485
+    - 153
     Thermal_UpperLeft:
-    - 76
-    - 345
+    - 64
+    - 73
     Thermal_UpperRight:
-    - 494
-    - 358
+    - 313
+    - 50
     Threshold_Temperature: 50.0
     World_LowerLeft:
-    - 0.0
-    - 5.0
+    - 5.164
+    - 0.184
     World_LowerRight:
-    - 5.0
-    - 5.0
+    - 3.767
+    - 2.802
     World_UpperLeft:
-    - 0.0
-    - 0.0
+    - 0.34
+    - 0.203
     World_UpperRight:
-    - 5.0
-    - 0.0
+    - 0.348
+    - 3.015
