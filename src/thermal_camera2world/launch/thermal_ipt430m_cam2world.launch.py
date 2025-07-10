@@ -16,10 +16,16 @@ def generate_launch_description():
         "thermal_ipt430m.launch.py",
     )
 
-    yaml_path = os.path.join(
+    yaml_path_UAV = os.path.join(
         get_package_share_directory("thermal_camera2world"),
         "config",
         "camera2world.yaml",
+    )
+
+    yaml_path_Robot = os.path.join(
+        get_package_share_directory("thermal_camera2world"),
+        "config",
+        "camera2world_robot.yaml",
     )
 
     thermal_camera2world_node = Node(
@@ -28,7 +34,7 @@ def generate_launch_description():
         namespace="thermal_IPT430M",
         name="thermal_camera_to_world",
         output="screen",
-        parameters = [yaml_path]
+        parameters = [yaml_path_Robot]
     )
     # 使用 TimerAction 包裹節點，延遲啟動
     delayed_node = TimerAction(

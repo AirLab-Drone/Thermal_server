@@ -10,6 +10,11 @@ def generate_launch_description():
 
     thermal_ipt430m_share = get_package_share_directory("thermal_ipt430m")
 
+
+    yaml_path_Robot = os.getcwd() + "/src/thermal_camera2world/config/camera2world_robot.yaml"
+    yaml_path_UAV = os.getcwd() + "/src/thermal_camera2world/config/camera2world.yaml"
+
+
     thermal_launch_path = os.path.join(
         thermal_ipt430m_share,
         "launch",
@@ -22,6 +27,7 @@ def generate_launch_description():
         executable="setup_camera2world_point.py",
         namespace="thermal_IPT430M",
         name="setup_camera2world_point",
+        parameters=[{"config_file": yaml_path_Robot}],
         output="screen",
     )
 
