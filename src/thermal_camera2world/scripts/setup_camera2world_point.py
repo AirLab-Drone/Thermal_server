@@ -107,9 +107,24 @@ class SetupCamera2WorldPoint(Node):
             self.get_logger().info(f"Pixel point clicked: {pixel_point}")
 
             # TODO 讀取robot laser back 座標
-
-            # 啟動子執行緒處理世界座標輸入
-            threading.Thread(target=self.ask_for_world_point, args=(pixel_point,)).start()
+            if self.isRobot:
+                try:
+                    transform = self.buffer.lookup_transform(
+                        "map", "laser_back", rclpy.time.Time()
+                    )
+                    world_point = [
+                        transform.transform.translation.x,
+                        transform.transform.translation.y,
+                    ]
+                    self.pixel_and_world_coordinate.append([pixel_point, world_point])
+                    # self.get_logger().info(f"Pixel point: {pixel_point}, World point: {world_point}")
+                    self.get_logger().info(f"{self.pixel_and_world_coordinate}")
+                except (LookupException, ConnectivityException, ExtrapolationException) as e:
+                    self.get_logger().error(f"Transform error: {e}")
+                    return
+            else:
+                # 啟動子執行緒處理世界座標輸入
+                threading.Thread(target=self.ask_for_world_point, args=(pixel_point,)).start()
 
         elif event == cv2.EVENT_RBUTTONDOWN:
             # 右鍵刪除最近一個點
