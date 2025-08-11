@@ -36,6 +36,7 @@ install(PROGRAMS
   scripts/thermal_camera2world.py
   scripts/compare_thermalAlert.py
   scripts/setup_camera2world_point.py
+  scripts/read_robot_laser_back.py
   DESTINATION lib/${PROJECT_NAME}
 )
 

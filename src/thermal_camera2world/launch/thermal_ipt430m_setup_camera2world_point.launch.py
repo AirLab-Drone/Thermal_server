@@ -27,7 +27,8 @@ def generate_launch_description():
         executable="setup_camera2world_point.py",
         namespace="thermal_IPT430M",
         name="setup_camera2world_point",
-        parameters=[{"config_file": yaml_path_Robot}],
+        parameters=[{"config_file": yaml_path_Robot},
+                    {"isRobot": True}],
         output="screen",
     )
 

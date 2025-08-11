@@ -11,6 +11,7 @@ import os
 import rclpy
 from rclpy.node import Node
 from cv_bridge import CvBridge, CvBridgeError
+from tf2_ros import Buffer, TransformListener, LookupException, ConnectivityException, ExtrapolationException
 
 from sensor_msgs.msg import Image
 
@@ -54,6 +55,19 @@ class SetupCamera2WorldPoint(Node):
             self.get_parameter("config_file").get_parameter_value().string_value
         )
 
+        # TODO: 讀取robot laser back 座標
+        self.declare_parameter(
+            "isRobot",
+            False,
+        )
+        self.isRobot = (
+            self.get_parameter("isRobot").get_parameter_value().bool_value
+        )
+
+        if self.isRobot:
+            self.buffer = Buffer()
+            self.listener = TransformListener(self.buffer, self)
+
         # Setup mouse callback
         cv2.namedWindow(self.thermal_debug_image_window_name, cv2.WINDOW_NORMAL)
         cv2.setMouseCallback(
@@ -88,6 +102,8 @@ class SetupCamera2WorldPoint(Node):
             # 點擊後紀錄像素座標
             pixel_point = (x, y)
             self.get_logger().info(f"Pixel point clicked: {pixel_point}")
+
+            # TODO 讀取robot laser back 座標
 
             # 啟動子執行緒處理世界座標輸入
             threading.Thread(target=self.ask_for_world_point, args=(pixel_point,)).start()
