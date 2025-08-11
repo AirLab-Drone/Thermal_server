@@ -67,6 +67,9 @@ class SetupCamera2WorldPoint(Node):
         if self.isRobot:
             self.buffer = Buffer()
             self.listener = TransformListener(self.buffer, self)
+        else:
+            self.buffer = None
+            self.listener = None
 
         # Setup mouse callback
         cv2.namedWindow(self.thermal_debug_image_window_name, cv2.WINDOW_NORMAL)
