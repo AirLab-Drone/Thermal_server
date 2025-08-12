@@ -15,7 +15,7 @@ class TfEchoNode(Node):
         self.source_frame = 'map'
 
         # 每 0.5 秒查詢一次
-        self.timer = self.create_timer(0.5, self.timer_callback)
+        self.timer = self.create_timer(0.1, self.timer_callback)
 
     def timer_callback(self):
         try:

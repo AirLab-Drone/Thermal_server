@@ -55,7 +55,7 @@ class SetupCamera2WorldPoint(Node):
             self.get_parameter("config_file").get_parameter_value().string_value
         )
 
-        # TODO: 讀取robot laser back 座標
+        # 讀取robot laser back 座標
         self.declare_parameter(
             "isRobot",
             False,
@@ -108,20 +108,23 @@ class SetupCamera2WorldPoint(Node):
 
             # TODO 讀取robot laser back 座標
             if self.isRobot:
-                try:
-                    transform = self.buffer.lookup_transform(
-                        "map", "laser_back", rclpy.time.Time()
-                    )
-                    world_point = [
-                        transform.transform.translation.x,
-                        transform.transform.translation.y,
-                    ]
-                    self.pixel_and_world_coordinate.append([pixel_point, world_point])
-                    # self.get_logger().info(f"Pixel point: {pixel_point}, World point: {world_point}")
-                    self.get_logger().info(f"{self.pixel_and_world_coordinate}")
-                except (LookupException, ConnectivityException, ExtrapolationException) as e:
-                    self.get_logger().error(f"Transform error: {e}")
-                    return
+                while True:
+                    try:
+                        transform = self.buffer.lookup_transform(
+                            "map", "laser_back", rclpy.time.Time()
+                        )
+                        self.get_logger().info(f"成功取得座標轉換: {transform}")
+                        world_point = [
+                            transform.transform.translation.x,
+                            transform.transform.translation.y,
+                        ]
+                        self.pixel_and_world_coordinate.append([pixel_point, world_point])
+                        # self.get_logger().info(f"Pixel point: {pixel_point}, World point: {world_point}")
+                        self.get_logger().info(f"{self.pixel_and_world_coordinate}")
+                        break
+                    except (LookupException, ConnectivityException, ExtrapolationException) as e:
+                        self.get_logger().error(f"座標轉換錯誤: {e}，正在重試...")
+                        
             else:
                 # 啟動子執行緒處理世界座標輸入
                 threading.Thread(target=self.ask_for_world_point, args=(pixel_point,)).start()
